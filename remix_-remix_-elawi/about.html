@@ -1,0 +1,224 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Our Story | ELAWI Heritage & Sustainable Couture</title>
+  <meta name="description" content="Discover the heritage of ELAWI. Ethical craftsmanship, organic materials, and timeless minimalist architecture in apparel design.">
+  
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <link rel="stylesheet" href="style.css">
+  <script>if(localStorage.getItem('elawi_theme')==='dark')document.documentElement.setAttribute('data-theme','dark');</script>
+</head>
+<body>
+
+  <!-- GLOBAL PREMIUM NAVBAR -->
+  <nav class="navbar" id="navbar">
+    <div class="container flex-between">
+      <div class="menu-toggle" id="menuToggle">
+        <i class="fa-solid fa-bars"></i>
+      </div>
+      <a href="index.html" class="navbar-brand">
+        ELAWI
+      </a>
+      
+      <ul class="nav-menu" id="navMenu">
+        <li><a href="index.html" class="nav-link">Home</a></li>
+        <li><a href="shop.html" class="nav-link">Shop</a></li>
+        <li><a href="about.html" class="nav-link active">Our Story</a></li>
+        <li><a href="contact.html" class="nav-link">Contact</a></li>
+        <li><a href="admin.html" class="nav-link" style="color:var(--accent);">Admin</a></li>
+      </ul>
+
+      <div class="navbar-actions">
+        <button class="action-btn" id="searchBtn" title="Search catalog">
+          <i class="fa-solid fa-magnifying-glass"></i>
+        </button>
+        <a href="profile.html#paneFavorites" class="action-btn" title="Favorites / Wishlist">
+          <i class="fa-solid fa-heart"></i>
+          <span class="badge-count wishlist-badge">0</span>
+        </a>
+
+        <a href="profile.html" class="action-btn navbar-user-btn" title="My Account">
+          <i class="fa-solid fa-user"></i>
+        </a>
+        <button class="theme-toggle-btn" id="themeToggle" title="Toggle dark / light mode" aria-label="Toggle theme">
+          <i class="fa-solid fa-sun icon-sun"></i>
+          <i class="fa-solid fa-moon icon-moon"></i>
+        </button>
+      </div>
+    </div>
+  </nav>
+
+  <!-- SEARCH OVERLAY -->
+  <div class="search-overlay" id="searchOverlay">
+    <div class="search-overlay-close" id="searchClose">
+      <i class="fa-solid fa-xmark"></i>
+    </div>
+    <div class="search-container">
+      <h2>SEARCH THE CATALOG</h2>
+      <div class="search-input-group">
+        <input type="text" id="searchInput" placeholder="Type keyword and press Enter..." autocomplete="off">
+        <i class="fa-solid fa-magnifying-glass"></i>
+      </div>
+    </div>
+  </div>
+
+  <!-- DYNAMIC SHOPPING BAG DRAWER SIDEBAR -->
+  <div class="cart-drawer" id="cartDrawer" style="position: fixed; top: 0; right: -420px; width: 400px; max-width: 90vw; height: 100dvh; background: var(--surface); border-left: 1.5px solid var(--gray-100); z-index: 1500; display: flex; flex-direction: column; transition: var(--transition); box-shadow: var(--shadow-lg);">
+    <div class="cart-drawer-header" style="padding: 1.5rem; border-bottom: 1.5px solid var(--gray-100); display: flex; justify-content: space-between; align-items: center;">
+      <h3 style="font-family: var(--font-heading); font-size: 1.25rem; font-weight: 700;"><i class="fa-solid fa-bag-shopping" style="color: var(--accent); margin-right: 0.5rem;"></i> My Shopping Bag</h3>
+      <button onclick="toggleCartDrawer()" style="font-size: 1.5rem; cursor: pointer; color: var(--gray-500); background:none; border:none;" aria-label="Close cart"><i class="fa-solid fa-xmark"></i></button>
+    </div>
+    <div id="cartSidebarList" style="flex: 1; overflow-y: auto; padding: 1.5rem; display: flex; flex-direction: column; gap: 1.25rem;">
+      <!-- Dynamic list -->
+    </div>
+    <div class="cart-drawer-footer" style="padding: 1.5rem; border-top: 1.5px solid var(--gray-100); background: var(--surface-muted);">
+      <div style="display: flex; justify-content: space-between; font-weight: 700; font-size: 1.1rem; margin-bottom: 1.25rem;">
+        <span>Subtotal</span>
+        <span id="cartSubtotal" style="color: var(--accent);">Br 0</span>
+      </div>
+      <a href="profile.html#paneCheckout" onclick="toggleCartDrawer()" class="btn btn-accent" style="width: 100%; display:inline-flex;">Proceed to Checkout <i class="fa-solid fa-arrow-right-long" style="margin-left: 0.5rem;"></i></a>
+    </div>
+  </div>
+
+  <!-- BACKDROP OVERLAY -->
+  <div class="overlay" id="sidebarOverlay"></div>
+
+  <!-- TOAST ALERTS NOTIFIER CONTAINER -->
+  <div class="toast-container" id="toastContainer"></div>
+
+  <!-- EDITORIAL HERO -->
+  <header class="editorial-hero">
+    <div class="container">
+      <span class="editorial-label">ELAWI HERITAGE</span>
+      <h1>OUR STORY & CREATIVE VISION</h1>
+      <p>Redefining contemporary style through ethical hand-looming, architectural forms, and absolute sustainability.</p>
+    </div>
+  </header>
+
+  <main>
+    <!-- STORY CONTENT -->
+    <section class="section-padding container">
+      <div class="editorial-showcase">
+        <div class="editorial-content-side" style="flex:1; line-height: 1.8;">
+          <span class="editorial-label">ATELIER ETHIOPIA</span>
+          <h2>A RETURN TO WHAT MATTERS</h2>
+          <p>In a world shaped by fast fashion and artificial materials, we take a different path.
+          We believe what touches your skin each day matters. Comfort, organic raw materials, and heritage hand-crafted tilet work should never be compromised. The cotton we choose, the way each piece is woven, and the experience of wearing it are at the heart of everything we do.</p>
+          <p>Made from organic looms, our garments are designed to be worn season after season. Rather than chasing fleeting trends, we focus on timeless designs, structural silhouettes, and enduring luxury.</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- TIMELINE -->
+    <section class="section-padding timeline-section">
+      <div class="container">
+        <div class="section-header">
+          <h2>THE ELAWI JOURNEY</h2>
+          <p>Milestone chapters defining our design principles and craftsmanship standards</p>
+        </div>
+
+        <div class="timeline">
+          <!-- Node 1 -->
+          <div class="timeline-node timeline-left">
+            <div class="timeline-box">
+              <div class="timeline-year">2023</div>
+              <h3>HERITAGE ROOTED</h3>
+              <p>Established our first local hand-loom weaver cooperative in Addis Ababa, restoring ancient craft patterns.</p>
+            </div>
+          </div>
+          <!-- Node 2 -->
+          <div class="timeline-node timeline-right">
+            <div class="timeline-box">
+              <div class="timeline-year">2024</div>
+              <h3>GOTS COTTON VERIFIED</h3>
+              <p>Achieved 100% GOTS organic cotton certification across our entire woven apparel catalog.</p>
+            </div>
+          </div>
+          <!-- Node 3 -->
+          <div class="timeline-node timeline-left">
+            <div class="timeline-box">
+              <div class="timeline-year">2025</div>
+              <h3>VIP MEMBER LAUNCH</h3>
+              <p>Introduced the digital ELAWI VIP membership card offering points tracking and custom orders.</p>
+            </div>
+          </div>
+          <!-- Node 4 -->
+          <div class="timeline-node timeline-right">
+            <div class="timeline-box">
+              <div class="timeline-year">2026</div>
+              <h3>COUTURE PLATFORM</h3>
+              <p>Launching our high-fidelity full-stack platform to connect global shoppers with genuine couture.</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <!-- BRAND PREMIUM FOOTER -->
+  <footer class="footer">
+    <div class="container">
+      <div class="grid-4" style="gap: 3rem;">
+        <div>
+          <div class="footer-brand">
+            <h2>ELAWI</h2>
+          </div>
+          <p class="footer-desc">For us, true refinement lies in simplicity, organic materials, and hand-tailored attention to detail.</p>
+          <div class="social-links">
+            <a href="https://www.instagram.com/before.the.name?igsh=MjRnc2d4YnVkdnM0" target="_blank" class="social-icon"><i class="fa-brands fa-instagram"></i></a>
+            <a href="https://www.tiktok.com/@before.the.name5" target="_blank" class="social-icon"><i class="fa-brands fa-tiktok"></i></a>
+            <a href="https://www.instagram.com/before.the.name?igsh=MjRnc2d4YnVkdnM0" target="_blank" class="social-icon"><i class="fa-brands fa-pinterest"></i></a>
+          </div>
+        </div>
+        
+        <div>   
+          <h3 class="footer-heading">COLLECTIONS</h3>
+          <ul class="footer-links">
+            <li><a href="shop.html?category=Traditional">Traditional</a></li>
+            <li><a href="shop.html?category=Modern Cut">Modern Cut</a></li>
+            <li><a href="shop.html?category=Minimalist">Minimalist</a></li>
+            <li><a href="shop.html">Browse All</a></li>
+          </ul>
+        </div>
+
+        <div>
+          <h3 class="footer-heading">CUSTOMER SERVICES</h3>
+          <ul class="footer-links">
+            <li><a href="contact.html">Support Desk</a></li>
+            <li><a href="about.html">Heritage Story</a></li>
+            <li><a href="profile.html">Order Status</a></li>
+            <li><a href="auth.html">VIP Membership</a></li>
+          </ul>
+        </div>
+
+        <div>
+          <h3 class="footer-heading">HEADQUARTERS</h3>
+          <div class="footer-contact-item">
+            <i class="fa-solid fa-location-dot"></i>
+            <div>
+              <strong>Retail Flagship</strong>
+              Addis Ababa, ETHIOPIA
+            </div>
+          </div>
+          <div class="footer-contact-item">
+            <i class="fa-solid fa-envelope"></i>
+            <div>
+              <strong>Inquiries & Concierge</strong>
+              concierge@elawi.com
+            </div>
+          </div>
+        </div>
+      </div>
+      
+      <div class="footer-bottom">
+        <p>&copy; 2026 ELAWI. All rights reserved. Elegant design & sustainable couture.</p>
+        <p>Addis Ababa &bull; ETHIOPIA </p>
+      </div>
+    </div>
+  </footer>
+
+  <script src="script.js"></script>
+</body>
+</html>

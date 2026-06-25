@@ -1,0 +1,8 @@
+{
+  "name": "Remix: Remix: ELAWI",
+  "description": "Elegant ELAWI Haute Couture and Modern Essentials shop with product dashboard, personalized recommendations, favorites wishlist, and secure admin controls.",
+  "requestFramePermissions": [],
+  "majorCapabilities": [
+    "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"
+  ]
+}

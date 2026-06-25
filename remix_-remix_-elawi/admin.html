@@ -1,0 +1,2079 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Admin Dashboard | ELAWI</title>
+  <meta name="description" content="ELAWI Admin Control Panel - manage products, analytics, and settings.">
+
+  <!-- React 18 via CDN -->
+  <script src="https://unpkg.com/react@18/umd/react.development.js" crossorigin></script>
+  <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js" crossorigin></script>
+  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+
+  <!-- Tailwind CSS -->
+  <script src="https://cdn.tailwindcss.com"></script>
+
+  <!-- Font Awesome -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+  <!-- Google Fonts -->
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@400;600;700;800&display=swap" rel="stylesheet">
+
+  <script>
+    window.tailwind.config = {
+      theme: {
+        extend: {
+          fontFamily: {
+            heading: ['Outfit', 'sans-serif'],
+            body:    ['Inter',  'sans-serif'],
+          },
+          colors: {
+            accent:        '#2A0203',
+            'accent-dark': '#1e0102',
+          },
+        }
+      }
+    }
+  </script>
+
+  <style>
+    * { box-sizing: border-box; }
+    body { font-family: 'Inter', sans-serif; margin: 0; }
+    ::-webkit-scrollbar { width: 6px; height: 6px; }
+    ::-webkit-scrollbar-track { background: #f1f1f1; }
+    ::-webkit-scrollbar-thumb { background: #2A0203; border-radius: 3px; }
+
+    /* Fade-in animation */
+    @keyframes fadeInUp {
+      from { opacity: 0; transform: translateY(16px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+    .fade-in { animation: fadeInUp 0.4s ease both; }
+
+    @keyframes slideInRight {
+      from { opacity: 0; transform: translateX(40px); }
+      to   { opacity: 1; transform: translateX(0); }
+    }
+    .slide-in { animation: slideInRight 0.35s ease both; }
+
+    /* Custom range slider */
+    input[type=range] { accent-color: #2A0203; }
+
+    /* Line clamp */
+    .line-clamp-2 {
+      display: -webkit-box;
+      -webkit-line-clamp: 2;
+      line-clamp: 2;
+      -webkit-box-orient: vertical;
+      overflow: hidden;
+    }
+
+    /* Gradient text */
+    .gradient-text {
+      background: linear-gradient(135deg, #2A0203, #dfa124);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+  </style>
+
+  <!-- Apply saved theme before paint -->
+  <script>
+    (function() {
+      if (localStorage.getItem('elawi_theme') === 'dark') {
+        document.documentElement.setAttribute('data-theme', 'dark');
+        document.documentElement.classList.add('dark');
+      }
+    })();
+  </script>
+</head>
+<body class="bg-gray-50 text-gray-800">
+  <div id="root"></div>
+
+
+  <script type="text/template" id="admin-app-template">
+    const { useState, useEffect, useRef, useMemo, useCallback } = React;
+
+    /* ============================================
+       CONSTANTS
+    ============================================ */
+    const ADMIN_USER = 'admin';
+    const ADMIN_PASS = 'admin123';
+
+    const COLORS     = ['charcoal','cream','sage','tan','gold','terracotta'];
+    const SIZES      = ['XS','S','M','L','XL','6','7','8','9','10','11','12','OS'];
+
+    const ICON_OPTIONS = [
+      { icon: '🕴️', label: 'Suit' },
+      { icon: '👔', label: 'Clothes' },
+      { icon: '👞', label: 'Shoes' },
+      { icon: '⌚', label: 'Watch' },
+      { icon: '🧴', label: 'Perfume' },
+      { icon: '🎩', label: 'Hat' },
+      { icon: '🕶️', label: 'Sunglasses' },
+      { icon: '💆', label: 'Hair' },
+      { icon: '👜', label: 'Bag' },
+      { icon: '💄', label: 'Makeup' },
+      { icon: '✨', label: 'Luxury' },
+      { icon: '🧣', label: 'Scarf' },
+    ];
+
+    const GRADIENTS = [
+      'linear-gradient(135deg,#2d2a26,#4a4540)',
+      'linear-gradient(135deg,#cda885,#e8d5bc)',
+      'linear-gradient(135deg,#1a1614,#3d322b)',
+      'linear-gradient(135deg,#b8860b,#dfa124)',
+      'linear-gradient(135deg,#d46a43,#f0a882)',
+      'linear-gradient(135deg,#4a3b1a,#dfa124)',
+      'linear-gradient(135deg,#c17f3e,#e8b87a)',
+      'linear-gradient(135deg,#8fa89b,#c5d5d0)',
+    ];
+
+    const COLOR_NAMES_LIST = [
+      { name: 'Obsidian Black', hex: '#2d2a26' },
+      { name: 'Alabaster Cream', hex: '#fcfbfa' },
+      { name: 'Sage Green', hex: '#8fa89b' },
+      { name: 'Desert Tan', hex: '#cda885' },
+      { name: 'Burnt Terracotta', hex: '#d46a43' },
+      { name: 'Silt Gray', hex: '#4a4540' },
+      { name: 'Luxury Gold', hex: '#dfa124' },
+      { name: 'Pure White', hex: '#ffffff' },
+      { name: 'Charcoal Black', hex: '#111111' },
+      { name: 'Navy Blue', hex: '#0a192f' },
+      { name: 'Royal Blue', hex: '#1e40af' },
+      { name: 'Forest Green', hex: '#064e3b' },
+      { name: 'Emerald Green', hex: '#059669' },
+      { name: 'Olive Drab', hex: '#556b2f' },
+      { name: 'Chocolate Brown', hex: '#451a03' },
+      { name: 'Ruby Red', hex: '#991b1b' },
+      { name: 'Crimson Red', hex: '#dc2626' },
+      { name: 'Coral Pink', hex: '#f87171' },
+      { name: 'Plum Purple', hex: '#581c87' },
+      { name: 'Lavender Violet', hex: '#c084fc' },
+      { name: 'Teal Green', hex: '#0f766e' },
+      { name: 'Steel Blue', hex: '#4682b4' },
+      { name: 'Khaki Beige', hex: '#f0e68c' },
+      { name: 'Silver Gray', hex: '#c0c0c0' },
+      { name: 'Rust Orange', hex: '#b45309' },
+      { name: 'Crimson Wine', hex: '#7f1d1d' },
+    ];
+
+    function hexToRgb(hex) {
+      if (!hex) return null;
+      const shorthandRegex = /^#?([a-f\d])([a-f\d])([a-f\d])$/i;
+      const fullHex = hex.replace(shorthandRegex, (m, r, g, b) => r + r + g + g + b + b);
+      const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(fullHex);
+      return result ? {
+        r: parseInt(result[1], 16),
+        g: parseInt(result[2], 16),
+        b: parseInt(result[3], 16)
+      } : null;
+    }
+
+    function getNearestColorName(hex) {
+      const rgb = hexToRgb(hex);
+      if (!rgb) return 'New Color';
+      let minDistance = Infinity;
+      let closestName = 'New Color';
+      for (const c of COLOR_NAMES_LIST) {
+        const cRgb = hexToRgb(c.hex);
+        if (!cRgb) continue;
+        const dist = Math.sqrt(
+          Math.pow(rgb.r - cRgb.r, 2) +
+          Math.pow(rgb.g - cRgb.g, 2) +
+          Math.pow(rgb.b - cRgb.b, 2)
+        );
+        if (dist < minDistance) {
+          minDistance = dist;
+          closestName = c.name;
+        }
+      }
+      return closestName;
+    }
+
+    function resolveHexFromName(name) {
+      if (!name) return '#808080';
+      const cleanName = name.trim().toLowerCase();
+      // 1. Direct match in COLOR_NAMES_LIST
+      const found = COLOR_NAMES_LIST.find(c => c.name.toLowerCase() === cleanName);
+      if (found) return found.hex;
+
+      // 2. Partial match
+      const partial = COLOR_NAMES_LIST.find(c => cleanName.includes(c.name.toLowerCase()) || c.name.toLowerCase().includes(cleanName));
+      if (partial) return partial.hex;
+
+      // 3. Fallbacks for basic color keywords
+      const cssColors = {
+        black: '#000000',
+        white: '#ffffff',
+        red: '#dc2626',
+        green: '#16a34a',
+        blue: '#2563eb',
+        yellow: '#ca8a04',
+        orange: '#ea580c',
+        purple: '#9333ea',
+        pink: '#db2777',
+        gray: '#4b5563',
+        grey: '#4b5563',
+        brown: '#78350f',
+        beige: '#f5f5dc',
+        cream: '#fdf6e2',
+        gold: '#eab308',
+        silver: '#cbd5e1',
+        bronze: '#cd7f32',
+        navy: '#1e3a8a',
+        teal: '#0d9488',
+        olive: '#808000',
+        lime: '#84cc16',
+        lavender: '#e9d5ff',
+        peach: '#ffdab9',
+        coral: '#f87171',
+        tan: '#d2b48c',
+        indigo: '#4f46e5',
+        violet: '#7c3aed',
+        magenta: '#d946ef',
+        cyan: '#06b6d4',
+        amber: '#f59e0b',
+        emerald: '#10b981',
+        rose: '#f43f5e',
+        plum: '#4c1d95',
+        rust: '#b45309',
+        silt: '#4a4540',
+        sage: '#8fa89b',
+        obsidian: '#2d2a26',
+        alabaster: '#fcfbfa',
+        desert: '#cda885',
+        sand: '#f5f5dc'
+      };
+
+      for (const [key, hex] of Object.entries(cssColors)) {
+        if (cleanName.includes(key)) {
+          return hex;
+        }
+      }
+
+      // 4. Fallback to a nice deterministic color based on hashing the name
+      let hash = 0;
+      for (let i = 0; i < cleanName.length; i++) {
+        hash = cleanName.charCodeAt(i) + ((hash << 5) - hash);
+      }
+      let color = '#';
+      for (let i = 0; i < 3; i++) {
+        const value = (hash >> (i * 8)) & 0xFF;
+        const balanced = Math.floor(40 + (value % 160));
+        color += ('00' + balanced.toString(16)).slice(-2);
+      }
+      return color;
+    }
+
+    const DEFAULT_PRODUCTS = [
+      {
+        id: 1,
+        title: "The Alabaster Habesha Kemis",
+        category: "Traditional",
+        price: 280,
+        rating: 4.9,
+        emoji: "👗",
+        icon: "👗",
+        color: "#fcfbfa",
+        colorName: "Alabaster Cream",
+        isNew: true,
+        description: "Hand-loomed cotton Habesha dress adorned with pure hand-stitched golden 'tilet' embroidery. A true cultural statement of premium heritage craftsmanship."
+      },
+      {
+        id: 2,
+        title: "The Terracotta Linen Suit",
+        category: "Modern Cut",
+        price: 420,
+        rating: 4.8,
+        emoji: "🧥",
+        icon: "🧥",
+        color: "#d46a43",
+        colorName: "Burnt Terracotta",
+        salePrice: 380,
+        description: "Double-breasted unstructured blazer matched with wide-legged tailored trousers. Spun from high-density, breathable Italian organic linen."
+      },
+      {
+        id: 3,
+        title: "The Obsidian Boubou",
+        category: "Minimalist",
+        price: 310,
+        rating: 4.7,
+        emoji: "🥋",
+        icon: "🥋",
+        color: "#2d2a26",
+        colorName: "Obsidian Black",
+        description: "A fluid, ankle-length unstructured boubou crafted with premium heavyweight silk-crepe. Designed for seamless comfort and sophisticated silhouettes."
+      },
+      {
+        id: 4,
+        title: "The Sage Green Kaftan",
+        category: "Traditional",
+        price: 240,
+        rating: 4.8,
+        emoji: "👘",
+        icon: "👘",
+        color: "#8fa89b",
+        colorName: "Sage Green",
+        description: "Features dynamic drop-shoulders, continuous sleeve designs, and delicate white threadwork bordering the neckline. Perfectly blends heritage and comfort."
+      },
+      {
+        id: 5,
+        title: "Monochrome Wool Trench",
+        category: "Modern Cut",
+        price: 490,
+        rating: 5.0,
+        emoji: "🧥",
+        icon: "🧥",
+        color: "#4a4540",
+        colorName: "Silt Gray",
+        isNew: true,
+        description: "Heavyweight double-faced wool wrap trench with a wide-notched lapel and dynamic tie belt. Perfect seasonal layering piece with structural drop sleeves."
+      },
+      {
+        id: 6,
+        title: "Desert Knit Hooded Lounger",
+        category: "Lounge Wear",
+        price: 195,
+        rating: 4.6,
+        emoji: "👕",
+        icon: "👕",
+        color: "#cda885",
+        colorName: "Desert Tan",
+        salePrice: 165,
+        description: "Luxuriously soft hooded sweater spun from carded Mongolian cashmere and premium cotton fibers. Features custom ribbed cuffs and an relaxed body fit."
+      }
+    ];
+
+    /* ============================================
+       LOCAL STORAGE HELPERS
+    ============================================ */
+    function dbGetProducts() {
+      try {
+        const raw = localStorage.getItem('aura_admin_products');
+        if (raw) return JSON.parse(raw);
+        localStorage.setItem('aura_admin_products', JSON.stringify(DEFAULT_PRODUCTS));
+        return DEFAULT_PRODUCTS;
+      } catch { return DEFAULT_PRODUCTS; }
+    }
+    function dbSaveProducts(list) {
+      localStorage.setItem('aura_admin_products', JSON.stringify(list));
+    }
+    function isLoggedIn() { return sessionStorage.getItem('aura_admin_auth') === '1'; }
+    function genId()      { return Date.now() + Math.floor(Math.random() * 1000); }
+
+    /* ============================================
+       TOAST COMPONENT
+    ============================================ */
+    function Toast({ toasts, remove }) {
+      return (
+        <div className="fixed bottom-6 right-6 z-[9999] flex flex-col gap-2 pointer-events-none">
+          {toasts.map(t => (
+            <div key={t.id} className={`slide-in flex items-center gap-3 px-5 py-3 rounded-xl shadow-2xl text-white text-sm font-semibold min-w-[260px] pointer-events-auto
+              ${t.type==='success'?'bg-emerald-600':t.type==='error'?'bg-red-600':'bg-gray-800'}`}>
+              <i className={`fas ${t.type==='success'?'fa-check-circle':t.type==='error'?'fa-times-circle':'fa-info-circle'}`}></i>
+              <span className="flex-1">{t.message}</span>
+              <button className="opacity-60 hover:opacity-100" onClick={()=>remove(t.id)}><i className="fas fa-times text-xs"></i></button>
+            </div>
+          ))}
+        </div>
+      );
+    }
+
+    function useToast() {
+      const [toasts, setToasts] = useState([]);
+      const add = useCallback((message, type='success') => {
+        const id = genId();
+        setToasts(p => [...p, { id, message, type }]);
+        setTimeout(() => setToasts(p => p.filter(t=>t.id!==id)), 4000);
+      }, []);
+      const remove = useCallback(id => setToasts(p=>p.filter(t=>t.id!==id)), []);
+      return { toasts, add, remove };
+    }
+
+    /* ============================================
+       CONFIRM MODAL
+    ============================================ */
+    function ConfirmModal({ open, title, message, onConfirm, onCancel }) {
+      if (!open) return null;
+      return (
+        <div className="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-2xl p-8 max-w-sm w-full shadow-2xl fade-in">
+            <div className="text-center mb-6">
+              <div className="w-16 h-16 bg-red-50 rounded-full flex items-center justify-center mx-auto mb-4">
+                <i className="fas fa-trash text-red-500 text-2xl"></i>
+              </div>
+              <h3 className="font-heading text-xl font-bold text-gray-900 mb-2">{title}</h3>
+              <p className="text-gray-400 text-sm leading-relaxed">{message}</p>
+            </div>
+            <div className="flex gap-3">
+              <button onClick={onCancel} className="flex-1 py-3 border-2 border-gray-100 rounded-xl font-semibold text-sm text-gray-600 hover:bg-gray-50 transition-colors">Cancel</button>
+              <button onClick={onConfirm} className="flex-1 py-3 bg-red-500 text-white rounded-xl font-semibold text-sm hover:bg-red-600 transition-colors">Delete</button>
+            </div>
+          </div>
+        </div>
+      );
+    }
+
+    /* ============================================
+       STATS CARD
+    ============================================ */
+    function StatsCard({ icon, label, value, sub, bg, trend }) {
+      return (
+        <div className="bg-white rounded-2xl p-5 shadow-sm border border-gray-100 hover:shadow-md transition-shadow">
+          <div className="flex items-start justify-between mb-4">
+            <div className={`w-11 h-11 ${bg} rounded-xl flex items-center justify-center`}>
+              <i className={`${icon} text-white`}></i>
+            </div>
+            {trend !== undefined && (
+              <span className={`text-xs font-bold px-2 py-0.5 rounded-full ${trend>=0?'bg-emerald-50 text-emerald-600':'bg-red-50 text-red-600'}`}>
+                {trend>=0?'+':''}{trend}%
+              </span>
+            )}
+          </div>
+          <p className="text-2xl font-heading font-extrabold text-gray-900 leading-tight">{value}</p>
+          <p className="text-xs font-semibold text-gray-600 mt-0.5">{label}</p>
+          {sub && <p className="text-xs text-gray-400 mt-1">{sub}</p>}
+        </div>
+      );
+    }
+
+    /* ============================================
+       LOGIN PAGE
+    ============================================ */
+    function LoginPage({ onLogin }) {
+      const [user,     setUser]     = useState('');
+      const [pass,     setPass]     = useState('');
+      const [showPass, setShowPass] = useState(false);
+      const [error,    setError]    = useState('');
+      const [loading,  setLoading]  = useState(false);
+
+      const submit = e => {
+        e.preventDefault();
+        setError(''); setLoading(true);
+        fetch('api/admin.php', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ username: user, password: pass })
+        })
+        .then(async res => {
+          const data = await res.json();
+          setLoading(false);
+          if (res.ok && data.success) {
+            sessionStorage.setItem('aura_admin_auth', '1');
+            onLogin();
+          } else {
+            setError(data.error || 'Invalid username or password.');
+          }
+        })
+        .catch(err => {
+          console.error(err);
+          // Fallback to local login if API is offline
+          const currentPass = localStorage.getItem('aura_admin_password') || 'admin123';
+          if (user === ADMIN_USER && pass === currentPass) {
+            sessionStorage.setItem('aura_admin_auth', '1');
+            onLogin();
+          } else {
+            setError('Invalid username or password.');
+          }
+          setLoading(false);
+        });
+      };
+
+      return (
+        <div className="min-h-screen bg-gradient-to-br from-gray-950 via-gray-900 to-gray-800 flex items-center justify-center p-4 relative overflow-hidden">
+          {/* decorative blobs */}
+          <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-red-950 opacity-10 rounded-full blur-3xl -translate-y-1/2 translate-x-1/4 pointer-events-none"></div>
+          <div className="absolute bottom-0 left-0 w-[400px] h-[400px] bg-amber-500 opacity-5 rounded-full blur-3xl translate-y-1/2 -translate-x-1/4 pointer-events-none"></div>
+
+          <div className="relative w-full max-w-md fade-in">
+            {/* Brand */}
+            <div className="text-center mb-8">
+              <h1 className="font-heading text-5xl font-extrabold text-white tracking-[0.2em]">
+                ELAWI
+              </h1>
+              <p className="text-gray-400 mt-2 text-xs font-semibold tracking-[0.3em] uppercase">Admin Control Panel</p>
+            </div>
+
+            {/* Card */}
+            <div className="bg-white rounded-3xl p-8 shadow-2xl">
+              <h2 className="font-heading text-2xl font-bold text-gray-900 mb-1">Sign In</h2>
+              <p className="text-gray-400 text-sm mb-7">Enter your admin credentials to continue</p>
+
+              <form onSubmit={submit} className="space-y-4">
+                {/* Username */}
+                <div>
+                  <label className="block text-[11px] font-bold text-gray-500 uppercase tracking-widest mb-1.5">Username</label>
+                  <div className="relative">
+                    <i className="fas fa-user absolute left-4 top-1/2 -translate-y-1/2 text-gray-300 text-sm"></i>
+                    <input type="text" value={user} onChange={e=>setUser(e.target.value)} placeholder="admin" required
+                      className="w-full pl-10 pr-4 py-3 border-2 border-gray-100 bg-gray-50 rounded-xl text-sm focus:outline-none focus:border-accent focus:bg-white transition-all" />
+                  </div>
+                </div>
+
+                {/* Password */}
+                <div>
+                  <label className="block text-[11px] font-bold text-gray-500 uppercase tracking-widest mb-1.5">Password</label>
+                  <div className="relative">
+                    <i className="fas fa-lock absolute left-4 top-1/2 -translate-y-1/2 text-gray-300 text-sm"></i>
+                    <input type={showPass?'text':'password'} value={pass} onChange={e=>setPass(e.target.value)} placeholder="••••••••" required
+                      className="w-full pl-10 pr-11 py-3 border-2 border-gray-100 bg-gray-50 rounded-xl text-sm focus:outline-none focus:border-accent focus:bg-white transition-all" />
+                    <button type="button" onClick={()=>setShowPass(p=>!p)} className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600">
+                      <i className={`fas ${showPass?'fa-eye-slash':'fa-eye'} text-sm`}></i>
+                    </button>
+                  </div>
+                </div>
+
+                {/* Error */}
+                {error && (
+                  <div className="flex items-center gap-2 bg-red-50 border border-red-200 text-red-600 px-4 py-3 rounded-xl text-sm">
+                    <i className="fas fa-exclamation-circle"></i> {error}
+                  </div>
+                )}
+
+                {/* Submit */}
+                <button type="submit" disabled={loading}
+                  className="w-full py-3.5 bg-gray-900 hover:bg-accent text-white rounded-xl font-heading font-semibold tracking-widest text-sm transition-all duration-300 disabled:opacity-60 flex items-center justify-center gap-2">
+                  {loading ? <><i className="fas fa-spinner fa-spin"></i> Authenticating…</> : <><i className="fas fa-sign-in-alt"></i> SIGN IN</>}
+                </button>
+              </form>
+
+              <div className="mt-5 pt-5 border-t border-gray-100 text-center text-xs text-gray-400">
+                Demo: <span className="font-semibold text-gray-600">admin</span> / <span className="font-semibold text-gray-600">admin123</span>
+              </div>
+            </div>
+
+            <p className="text-center text-gray-600 text-xs mt-6">&copy; 2026 ELAWI &bull; Admin Portal</p>
+          </div>
+        </div>
+      );
+    }
+
+    /* ============================================
+       SIDEBAR
+    ============================================ */
+    function Sidebar({ page, setPage, onLogout, collapsed, setCollapsed }) {
+      const nav = [
+        { id:'dashboard', icon:'fas fa-chart-pie',    label:'Dashboard' },
+        { id:'products',  icon:'fas fa-box-open',     label:'Products'  },
+        { id:'add',       icon:'fas fa-plus-circle',  label:'Add Product'},
+        { id:'analytics', icon:'fas fa-chart-line',   label:'Analytics' },
+        { id:'settings',  icon:'fas fa-cog',          label:'Settings'  },
+      ];
+      return (
+        <aside className={`fixed inset-y-0 left-0 flex flex-col bg-gray-950/75 backdrop-blur-lg border-r border-white/10 text-white z-40 transition-all duration-300 ${collapsed?'w-[72px] md:w-[72px] -translate-x-full md:translate-x-0':'w-60 md:w-60 translate-x-0'}`}>
+          {/* Header */}
+          <div className={`flex items-center border-b border-white/10 h-16 px-4 ${collapsed?'justify-center':'justify-between'}`}>
+            {!collapsed && <span className="font-heading font-extrabold text-xl tracking-[0.1em]">ELAWI</span>}
+            <button onClick={()=>setCollapsed(c=>!c)} className="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-white/10 transition-colors text-gray-400 hover:text-white">
+              <i className={`fas ${collapsed?'fa-bars':'fa-chevron-left'} text-sm`}></i>
+            </button>
+          </div>
+
+          {/* Admin badge */}
+          {!collapsed && (
+            <div className="px-4 py-4 border-b border-white/10">
+              <div className="flex items-center gap-3">
+                <div className="w-8 h-8 rounded-full bg-accent flex items-center justify-center font-heading font-bold text-xs flex-shrink-0 text-white">AD</div>
+                <div className="min-w-0">
+                  <p className="text-sm font-semibold leading-tight truncate text-white">Administrator</p>
+                  <p className="text-xs text-gray-500">Super Admin</p>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Nav */}
+          <nav className="flex-1 p-2 overflow-y-auto space-y-0.5 mt-2">
+            {nav.map(item => (
+              <button key={item.id} onClick={()=>setPage(item.id)} title={collapsed?item.label:''}
+                className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all
+                  ${page===item.id?'bg-accent text-white shadow-lg shadow-accent/30':'text-gray-400 hover:text-white hover:bg-white/10'}
+                  ${collapsed?'justify-center':''}`}>
+                <i className={`${item.icon} w-4 text-center flex-shrink-0`}></i>
+                {!collapsed && <span>{item.label}</span>}
+              </button>
+            ))}
+          </nav>
+
+          {/* Bottom */}
+          <div className="p-2 border-t border-white/10 space-y-0.5">
+            <a href="shop.html" title={collapsed?'View Store':''} className={`flex items-center gap-3 px-3 py-2.5 rounded-xl text-gray-400 hover:text-white hover:bg-white/10 transition-all text-sm ${collapsed?'justify-center':''}`}>
+              <i className="fas fa-store w-4 text-center flex-shrink-0"></i>
+              {!collapsed && <span>View Store</span>}
+            </a>
+            <button onClick={onLogout} title={collapsed?'Logout':''} className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-gray-400 hover:text-red-400 hover:bg-red-900/20 transition-all text-sm ${collapsed?'justify-center':''}`}>
+              <i className="fas fa-sign-out-alt w-4 text-center flex-shrink-0"></i>
+              {!collapsed && <span>Logout</span>}
+            </button>
+          </div>
+        </aside>
+      );
+    }
+
+    /* ============================================
+       DASHBOARD PAGE
+    ============================================ */
+    function DashboardPage({ products, setPage, categories }) {
+      const totalVal  = products.reduce((s,p) => s + p.price, 0);
+      const cats      = [...new Set(products.map(p=>p.category))];
+      const avgRating = (products.reduce((s,p)=>s+p.rating,0)/(products.length||1)).toFixed(1);
+      const saleCount = products.filter(p=>p.originalPrice).length;
+
+      const catDist = categories.map(cat => ({
+        cat, count: products.filter(p=>p.category===cat).length
+      })).filter(c=>c.count>0);
+      const maxCount = Math.max(...catDist.map(c=>c.count), 1);
+
+      return (
+        <div className="space-y-7 fade-in">
+          {/* Header */}
+          <div className="flex items-center justify-between">
+            <div>
+              <h1 className="font-heading text-2xl font-extrabold text-gray-900">Dashboard</h1>
+              <p className="text-gray-400 text-xs mt-0.5">Welcome back — here's your store overview.</p>
+            </div>
+            <button onClick={()=>setPage('add')} className="flex items-center gap-2 px-4 py-2 bg-accent text-white text-sm font-semibold rounded-xl hover:bg-accent-dark transition-colors shadow-lg shadow-accent/30">
+              <i className="fas fa-plus"></i> Add Product
+            </button>
+          </div>
+
+          {/* Stats */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+            <StatsCard icon="fas fa-box-open"  label="Total Products"  value={products.length} sub="Active catalog"          bg="bg-accent"      trend={12} />
+            <StatsCard icon="fas fa-dollar-sign" label="Total Value"     value={`Br ${totalVal.toFixed(2)}`} sub="Current retail price"   bg="bg-green-500"  trend={8}  />
+            <StatsCard icon="fas fa-tags"        label="Categories"    value={cats.length}       sub={`of ${categories.length}`} bg="bg-blue-500"  />
+            <StatsCard icon="fas fa-star"        label="Avg Rating"    value={avgRating}          sub={`${saleCount} on sale`}    bg="bg-amber-500" trend={2}  />
+          </div>
+
+          {/* Recent + Category breakdown */}
+          <div className="grid grid-cols-1 lg:grid-cols-5 gap-5">
+            {/* Recent Products */}
+            <div className="lg:col-span-3 bg-white rounded-2xl p-5 shadow-sm border border-gray-100">
+              <div className="flex items-center justify-between mb-4">
+                <h2 className="font-heading font-bold text-gray-900">Recent Products</h2>
+                <button onClick={()=>setPage('products')} className="text-accent text-xs font-semibold hover:underline">View All →</button>
+              </div>
+              <div className="space-y-2">
+                {[...products].reverse().slice(0,5).map(p => (
+                  <div key={p.id} className="flex items-center gap-3 p-2.5 rounded-xl hover:bg-gray-50 transition-colors">
+                    {p.image ? (
+                      <img src={p.image} className="w-10 h-10 rounded-xl object-cover flex-shrink-0" alt="" />
+                    ) : (
+                      <div className="w-10 h-10 rounded-xl flex items-center justify-center text-xl flex-shrink-0" style={{background:p.iconBg}}>{p.icon}</div>
+                    )}
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-semibold text-gray-900 truncate">{p.title}</p>
+                      <p className="text-xs text-gray-400">{p.category}</p>
+                    </div>
+                    <div className="text-right flex-shrink-0">
+                      <p className="text-sm font-bold text-gray-900">Br {p.price.toFixed(2)}</p>
+                      <p className="text-xs text-amber-500">★ {p.rating}</p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* Category bars */}
+            <div className="lg:col-span-2 bg-white rounded-2xl p-5 shadow-sm border border-gray-100">
+              <h2 className="font-heading font-bold text-gray-900 mb-4">By Category</h2>
+              <div className="space-y-3">
+                {catDist.map(c => (
+                  <div key={c.cat}>
+                    <div className="flex justify-between text-xs mb-1">
+                      <span className="font-medium text-gray-700">{c.cat}</span>
+                      <span className="text-gray-400">{c.count}</span>
+                    </div>
+                    <div className="h-1.5 bg-gray-100 rounded-full overflow-hidden">
+                      <div className="h-full bg-accent rounded-full transition-all duration-700" style={{width:`${(c.count/maxCount)*100}%`}}></div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+
+          {/* Quick actions */}
+          <div className="bg-gradient-to-r from-gray-950 to-gray-800 rounded-2xl p-5">
+            <h2 className="font-heading font-bold text-white mb-3 text-sm uppercase tracking-widest">Quick Actions</h2>
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+              {[
+                {icon:'fa-plus',       label:'Add',      action:()=>setPage('add')},
+                {icon:'fa-box-open',   label:'Products', action:()=>setPage('products')},
+                {icon:'fa-chart-line', label:'Analytics',action:()=>setPage('analytics')},
+                {icon:'fa-cog',        label:'Settings', action:()=>setPage('settings')},
+              ].map(q=>(
+                <button key={q.label} onClick={q.action}
+                  className="flex flex-col items-center gap-2 py-4 rounded-xl bg-white/10 hover:bg-accent transition-all duration-200 text-white text-xs font-semibold">
+                  <i className={`fas ${q.icon} text-base`}></i>{q.label}
+                </button>
+              ))}
+            </div>
+          </div>
+        </div>
+      );
+    }
+
+    /* ============================================
+       FORM FIELD COMPONENT
+    ============================================ */
+    const F = ({label, name, form, onChange, errors, type='text', placeholder, required, wrapperClass='', ...rest}) => (
+      <div className={wrapperClass}>
+        <label className="block text-[11px] font-bold text-gray-500 uppercase tracking-widest mb-1.5">
+          {label} {required&&<span className="text-red-400">*</span>}
+        </label>
+        <input type={type} value={form[name]} onChange={e=>onChange(name,e.target.value)} placeholder={placeholder} {...rest}
+          className={`w-full px-4 py-2.5 border-2 rounded-xl bg-gray-50 text-sm transition-all focus:outline-none focus:bg-white
+            ${errors[name]?'border-red-400':'border-gray-100 focus:border-accent'}`} />
+        {errors[name] && <p className="text-red-500 text-xs mt-1"><i className="fas fa-exclamation-circle mr-1"></i>{errors[name]}</p>}
+      </div>
+    );
+
+    /* ============================================
+       PRODUCT FORM (ADD / EDIT)
+    ============================================ */
+    function ProductFormPage({ editProduct, onSave, onCancel, toast, categories, onAddCategory }) {
+      const blank = {
+        title:'', category:categories[0] || 'Traditional', price:'', originalPrice:'',
+        description:'', rating:'4.7', reviews:'0', color:COLORS[0],
+        size:SIZES[2], popularity:'80', icon:ICON_OPTIONS[0].icon, iconBg:GRADIENTS[0],
+        image: '',
+        colorVariants: []
+      };
+      const [form,   setForm]   = useState(blank);
+      const [errors, setErrors] = useState({});
+      const [saving, setSaving] = useState(false);
+      const [dragActive, setDragActive] = useState(false);
+
+      const [showInlineAdder, setShowInlineAdder] = useState(false);
+      const [inlineCat, setInlineCat] = useState('');
+      const [newColorName, setNewColorName] = useState('');
+      const [newColorHex, setNewColorHex] = useState('#2d2a26');
+
+      useEffect(() => {
+        if (editProduct) {
+          setForm({
+            title:         editProduct.title        || '',
+            category:      editProduct.category     || categories[0] || 'Traditional',
+            price:         String(editProduct.price || ''),
+            originalPrice: String(editProduct.originalPrice || ''),
+            description:   editProduct.description  || '',
+            rating:        String(editProduct.rating        || '4.7'),
+            reviews:       String(editProduct.reviews       || '0'),
+            color:         editProduct.color        || COLORS[0],
+            size:          editProduct.size         || 'M',
+            popularity:    String(editProduct.popularity    || '80'),
+            icon:          editProduct.icon         || ICON_OPTIONS[0].icon,
+            iconBg:        editProduct.iconBg       || GRADIENTS[0],
+            image:         editProduct.image        || '',
+            colorVariants: editProduct.colorVariants || [],
+          });
+        } else {
+          setForm(blank);
+        }
+        setErrors({});
+      }, [editProduct, categories]);
+
+      const handleInlineAdd = () => {
+        const trimmed = inlineCat.trim();
+        if (!trimmed) {
+          toast('Category name cannot be empty', 'error');
+          return;
+        }
+        const success = onAddCategory(trimmed);
+        if (success) {
+          setForm(p => ({ ...p, category: trimmed }));
+          setInlineCat('');
+          setShowInlineAdder(false);
+        }
+      };
+
+      const set = (k,v) => {
+        setForm(p => ({...p, [k]:v}));
+        setErrors(p => ({...p, [k]:undefined}));
+      };
+
+      const validate = () => {
+        const e = {};
+        if (!form.title.trim())  e.title = 'Required';
+        if (!form.description.trim()) e.description = 'Required';
+        if (!form.price || isNaN(+form.price) || +form.price <= 0) e.price = 'Must be a positive number';
+        if (form.originalPrice && (isNaN(+form.originalPrice) || +form.originalPrice <= 0)) e.originalPrice = 'Must be a positive number';
+        if (+form.rating < 1 || +form.rating > 5) e.rating = 'Must be 1–5';
+        return e;
+      };
+
+      const processImageFile = file => {
+        if (!file.type.startsWith('image/')) {
+          toast('Please upload an image file.', 'error');
+          return;
+        }
+
+        const reader = new FileReader();
+        reader.onloadend = () => {
+          const img = new Image();
+          img.onload = () => {
+            const maxDim = 800;
+            let width = img.width;
+            let height = img.height;
+
+            if (width > maxDim || height > maxDim) {
+              if (width > height) {
+                height = Math.round((height * maxDim) / width);
+                width = maxDim;
+              } else {
+                width = Math.round((width * maxDim) / height);
+                height = maxDim;
+              }
+            }
+
+            const canvas = document.createElement('canvas');
+            canvas.width = width;
+            canvas.height = height;
+
+            const ctx = canvas.getContext('2d');
+            ctx.drawImage(img, 0, 0, width, height);
+
+            const compressedBase64 = canvas.toDataURL('image/jpeg', 0.75);
+            set('image', compressedBase64);
+            toast('Photo uploaded & optimized successfully!', 'success');
+          };
+          img.src = reader.result;
+        };
+        reader.onerror = () => {
+          toast('Failed to read file.', 'error');
+        };
+        reader.readAsDataURL(file);
+      };
+
+      const handleImageUpload = e => {
+        const file = e.target.files[0];
+        if (file) processImageFile(file);
+      };
+
+      const handleDrag = useCallback(e => {
+        e.preventDefault();
+        e.stopPropagation();
+        if (e.type === "dragenter" || e.type === "dragover") {
+          setDragActive(true);
+        } else if (e.type === "dragleave") {
+          setDragActive(false);
+        }
+      }, []);
+
+      const handleDrop = useCallback(e => {
+        e.preventDefault();
+        e.stopPropagation();
+        setDragActive(false);
+
+        if (e.dataTransfer.files && e.dataTransfer.files[0]) {
+          processImageFile(e.dataTransfer.files[0]);
+        }
+      }, []);
+
+      const submit = e => {
+        e.preventDefault();
+        const errs = validate();
+        if (Object.keys(errs).length) { setErrors(errs); toast('Fix the highlighted errors.','error'); return; }
+        setSaving(true);
+        setTimeout(() => {
+          const firstVariantWithImage = (form.colorVariants || []).find(v => v.images && v.images.length > 0);
+          const firstPhoto = firstVariantWithImage ? firstVariantWithImage.images[0] : null;
+          const mainImage = form.image || firstPhoto || undefined;
+
+          const firstColorHex = (form.colorVariants && form.colorVariants[0]) ? form.colorVariants[0].color : form.color;
+
+          onSave({
+            id:           editProduct ? editProduct.id : genId(),
+            title:        form.title.trim(),
+            category:     form.category,
+            price:        +form.price,
+            originalPrice:form.originalPrice ? +form.originalPrice : undefined,
+            description:  form.description.trim(),
+            rating:       +form.rating,
+            reviews:      +form.reviews,
+            color:        firstColorHex,
+            size:         form.size,
+            popularity:   +form.popularity,
+            icon:         form.icon,
+            iconBg:       form.iconBg,
+            image:        mainImage,
+            colorVariants:form.colorVariants || [],
+          });
+          setSaving(false);
+        }, 600);
+      };
+
+      return (
+        <div className="space-y-6 fade-in">
+          {/* Header */}
+          <div className="flex items-center gap-3">
+            {onCancel && (
+              <button onClick={onCancel} className="w-9 h-9 flex items-center justify-center rounded-xl hover:bg-gray-100 transition-colors text-gray-500">
+                <i className="fas fa-arrow-left"></i>
+              </button>
+            )}
+            <div>
+              <h1 className="font-heading text-2xl font-extrabold text-gray-900">{editProduct?'Edit Product':'Add New Product'}</h1>
+              <p className="text-gray-400 text-xs mt-0.5">{editProduct?'Update product details below':'Fill in the form to add a new product to the catalog'}</p>
+            </div>
+          </div>
+
+          <form onSubmit={submit}>
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
+
+              {/* Left: form fields */}
+              <div className="lg:col-span-2 space-y-5">
+
+                {/* Basic Info */}
+                <div className="bg-white rounded-2xl p-6 md:p-8 shadow-sm border border-gray-100">
+                  <h2 className="font-heading font-bold text-gray-900 text-sm uppercase tracking-wider mb-4 flex items-center gap-2">
+                    <i className="fas fa-info-circle text-accent"></i> Basic Info
+                  </h2>
+                  <div className="space-y-4">
+                    <div>
+                      <label className="block text-[11px] font-bold text-gray-500 uppercase tracking-widest mb-1.5">
+                        Product Name <span className="text-red-400">*</span>
+                      </label>
+                      <textarea rows={2} value={form.title} onChange={e=>set('title',e.target.value)} placeholder="e.g. Premium Silk Tie"
+                        maxLength={255}
+                        className={`w-full px-4 py-2.5 border-2 rounded-xl bg-gray-50 text-sm resize-none transition-all focus:outline-none focus:bg-white
+                          ${errors.title?'border-red-400':'border-gray-100 focus:border-accent'}`}/>
+                      {errors.title && <p className="text-red-500 text-xs mt-1"><i className="fas fa-exclamation-circle mr-1"></i>{errors.title}</p>}
+                    </div>
+                    <div>
+                      <label className="block text-[11px] font-bold text-gray-500 uppercase tracking-widest mb-1.5">Description <span className="text-red-400">*</span></label>
+                      <textarea rows={4} value={form.description} onChange={e=>set('description',e.target.value)} placeholder="Describe the product..."
+                        className={`w-full px-4 py-2.5 border-2 rounded-xl bg-gray-50 text-sm resize-none transition-all focus:outline-none focus:bg-white
+                          ${errors.description?'border-red-400':'border-gray-100 focus:border-accent'}`}/>
+                      {errors.description && <p className="text-red-500 text-xs mt-1"><i className="fas fa-exclamation-circle mr-1"></i>{errors.description}</p>}
+                    </div>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                      <div>
+                        <div className="flex items-center justify-between mb-1.5">
+                          <label className="block text-[11px] font-bold text-gray-500 uppercase tracking-widest">Category <span className="text-red-400">*</span></label>
+                          <button type="button" onClick={()=>setShowInlineAdder(!showInlineAdder)} className="text-accent hover:text-accent-dark text-[10px] font-bold uppercase tracking-wider transition-colors focus:outline-none">
+                            {showInlineAdder ? 'Cancel' : '+ Add Custom'}
+                          </button>
+                        </div>
+                        {!showInlineAdder ? (
+                          <select value={form.category} onChange={e=>set('category',e.target.value)}
+                            className="w-full px-4 py-2.5 border-2 border-gray-100 rounded-xl bg-gray-50 text-sm focus:outline-none focus:border-accent transition-all">
+                            {categories.map(c=><option key={c}>{c}</option>)}
+                          </select>
+                        ) : (
+                          <div className="flex gap-2">
+                            <input type="text" value={inlineCat} onChange={e=>setInlineCat(e.target.value)} placeholder="New category name..."
+                              className="flex-1 px-4 py-2.5 border-2 border-gray-100 rounded-xl bg-gray-50 text-sm focus:outline-none focus:border-accent focus:bg-white transition-all" />
+                            <button type="button" onClick={handleInlineAdd}
+                              className="px-4 py-2.5 bg-accent text-white rounded-xl text-sm font-semibold hover:bg-accent-dark transition-colors">
+                              Add
+                            </button>
+                          </div>
+                        )}
+                      </div>
+                      <div>
+                        <label className="block text-[11px] font-bold text-gray-500 uppercase tracking-widest mb-1.5">Size</label>
+                        <select value={form.size} onChange={e=>set('size',e.target.value)}
+                          className="w-full px-4 py-2.5 border-2 border-gray-100 rounded-xl bg-gray-50 text-sm focus:outline-none focus:border-accent transition-all">
+                          {SIZES.map(s=><option key={s}>{s}</option>)}
+                        </select>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Pricing & Stats */}
+                <div className="bg-white rounded-2xl p-6 md:p-8 shadow-sm border border-gray-100">
+                  <h2 className="font-heading font-bold text-gray-900 text-sm uppercase tracking-wider mb-4 flex items-center gap-2">
+                    <i className="fas fa-tag text-accent"></i> Pricing & Stats
+                  </h2>
+                  <div className="grid grid-cols-2 gap-4">
+                    <F label="Current Price (Br)" name="price" type="number" placeholder="0.00" required wrapperClass="col-span-2" form={form} onChange={set} errors={errors} />
+                    <F label="Original Price (Br)" name="originalPrice" type="number" placeholder="Leave blank if no sale" wrapperClass="col-span-1" form={form} onChange={set} errors={errors} />
+                    <F label="Rating (1–5)" name="rating" type="number" placeholder="4.5" wrapperClass="col-span-1 sm:col-span-2" form={form} onChange={set} errors={errors} />
+                    <F label="Review Count" name="reviews" type="number" placeholder="0" wrapperClass="col-span-2 sm:col-span-1" form={form} onChange={set} errors={errors} />
+                    <div className="col-span-2">
+                      <label className="block text-[11px] font-bold text-gray-500 uppercase tracking-widest mb-1.5">Popularity — {form.popularity}/100</label>
+                      <input type="range" min="1" max="100" value={form.popularity} onChange={e=>set('popularity',e.target.value)} className="w-full" />
+                      <div className="flex justify-between text-[10px] text-gray-400 mt-0.5"><span>Low</span><span>Best Seller</span></div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Color Variants & Photos */}
+                <div className="bg-white rounded-2xl p-6 md:p-8 shadow-sm border border-gray-100">
+                  <div className="flex items-center justify-between mb-4">
+                    <h2 className="font-heading font-bold text-gray-900 text-sm uppercase tracking-wider flex items-center gap-2">
+                      <i className="fas fa-palette text-accent"></i> Color Variants & Photos
+                    </h2>
+                    <span className="text-[10px] bg-accent/10 text-accent font-bold px-2.5 py-1 rounded-full uppercase tracking-wider">
+                      {(form.colorVariants || []).length} Variants
+                    </span>
+                  </div>
+                  
+                  <p className="text-gray-400 text-xs mb-4">
+                    Add different colors for this product. For each color, you can add specific photos. On the storefront, the product photos will dynamically switch when a customer selects a color.
+                  </p>
+
+                  {/* List of Existing Color Variants */}
+                  <div className="space-y-4 mb-6">
+                    {(form.colorVariants || []).map((variant, vIdx) => (
+                      <div key={vIdx} className="p-4 border-2 border-gray-100 rounded-xl bg-gray-50/50 space-y-3 relative">
+                        {/* Remove button */}
+                        <button type="button" 
+                          onClick={() => {
+                            const updated = form.colorVariants.filter((_, i) => i !== vIdx);
+                            set('colorVariants', updated);
+                            toast(`Removed color variant "${variant.colorName}"`, 'info');
+                          }}
+                          className="absolute top-3 right-3 text-red-500 hover:text-red-700 transition-colors text-xs"
+                          title="Delete Variant"
+                        >
+                          <i className="fas fa-trash-alt mr-1"></i>Delete Variant
+                        </button>
+
+                        <div className="flex items-center gap-3">
+                          {/* Color display */}
+                          <div className="w-6 h-6 rounded-full border border-gray-200 shadow-sm" style={{ backgroundColor: variant.color }}></div>
+                          <div>
+                            <h4 className="text-xs font-bold text-gray-800">{variant.colorName}</h4>
+                            <p className="text-[10px] text-gray-400 font-mono">{variant.color}</p>
+                          </div>
+                        </div>
+
+                        {/* Images list for this color */}
+                        <div>
+                          <p className="text-[10px] font-bold text-gray-500 uppercase tracking-wider mb-2">Photos ({variant.images ? variant.images.length : 0})</p>
+                          
+                          <div className="flex flex-wrap gap-2 items-center">
+                            {/* Render uploaded images for this variant */}
+                            {(variant.images || []).map((imgUrl, imgIdx) => (
+                              <div key={imgIdx} className="relative w-16 h-16 rounded-lg overflow-hidden border border-gray-200 group bg-white shadow-sm">
+                                <img src={imgUrl} className="w-full h-full object-cover" />
+                                <button type="button"
+                                  onClick={() => {
+                                    const updatedImages = variant.images.filter((_, i) => i !== imgIdx);
+                                    const updatedVariants = form.colorVariants.map((v, i) => i === vIdx ? { ...v, images: updatedImages } : v);
+                                    set('colorVariants', updatedVariants);
+                                    toast('Removed photo.', 'info');
+                                  }}
+                                  className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 flex items-center justify-center text-white text-[10px] transition-opacity cursor-pointer"
+                                >
+                                  <i className="fas fa-trash"></i>
+                                </button>
+                              </div>
+                            ))}
+
+                            {/* File Upload for this specific variant */}
+                            <label className="w-16 h-16 border-2 border-dashed border-gray-200 rounded-lg flex flex-col items-center justify-center cursor-pointer hover:border-accent hover:bg-orange-50/10 transition-all text-gray-400">
+                              <i className="fas fa-plus text-xs mb-1"></i>
+                              <span className="text-[8px] font-semibold">Upload</span>
+                              <input type="file" accept="image/*" className="hidden" 
+                                onChange={(e) => {
+                                  const file = e.target.files[0];
+                                  if (file) {
+                                    if (!file.type.startsWith('image/')) {
+                                      toast('Please upload an image file.', 'error');
+                                      return;
+                                    }
+                                    const reader = new FileReader();
+                                    reader.onloadend = () => {
+                                      const img = new Image();
+                                      img.onload = () => {
+                                        const maxDim = 800;
+                                        let width = img.width;
+                                        let height = img.height;
+                                        if (width > maxDim || height > maxDim) {
+                                          if (width > height) {
+                                            height = Math.round((height * maxDim) / width);
+                                            width = maxDim;
+                                          } else {
+                                            width = Math.round((width * maxDim) / height);
+                                            height = maxDim;
+                                          }
+                                        }
+                                        const canvas = document.createElement('canvas');
+                                        canvas.width = width;
+                                        canvas.height = height;
+                                        const ctx = canvas.getContext('2d');
+                                        ctx.drawImage(img, 0, 0, width, height);
+                                        const base64 = canvas.toDataURL('image/jpeg', 0.75);
+
+                                        // Append base64 image to the current variant
+                                        const currentImages = variant.images || [];
+                                        const updatedVariants = form.colorVariants.map((v, i) => i === vIdx ? { ...v, images: [...currentImages, base64] } : v);
+                                        set('colorVariants', updatedVariants);
+                                        if (!form.image) {
+                                          set('image', base64);
+                                        }
+                                        toast('Uploaded photo for color ' + variant.colorName, 'success');
+                                      };
+                                      img.src = reader.result;
+                                    };
+                                    reader.readAsDataURL(file);
+                                  }
+                                }} 
+                              />
+                            </label>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                    
+                    {(form.colorVariants || []).length === 0 && (
+                      <div className="text-center py-6 border-2 border-dashed border-gray-100 rounded-xl">
+                        <i className="fas fa-palette text-gray-300 text-xl mb-1"></i>
+                        <p className="text-xs text-gray-400 font-medium">No color variants added yet.</p>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Add New Color Variant Creator */}
+                  <div className="p-4 border border-dashed border-gray-200 rounded-xl bg-gray-50/20">
+                    <h3 className="text-xs font-bold text-gray-700 uppercase tracking-wider mb-3">Add Color Variant</h3>
+                    <div className="space-y-3 mb-3">
+                      <div>
+                        <label className="block text-[9px] font-bold text-gray-400 uppercase mb-1">Color Picker / Name (Optional)</label>
+                        <div className="flex gap-2 items-center">
+                          <input 
+                            type="color" 
+                            value={newColorHex}
+                            onChange={(e) => {
+                              const hex = e.target.value;
+                              setNewColorHex(hex);
+                              if (!newColorName.trim()) {
+                                setNewColorName(getNearestColorName(hex));
+                              }
+                            }}
+                            className="w-10 h-10 rounded-lg cursor-pointer border border-gray-200 bg-white p-1 shrink-0" 
+                            title="Choose color hex"
+                          />
+                          <input 
+                            type="text" 
+                            id="newVariantColorName" 
+                            value={newColorName}
+                            onChange={(e) => {
+                              const val = e.target.value;
+                              setNewColorName(val);
+                              const resolved = resolveHexFromName(val);
+                              if (resolved && resolved !== '#808080') {
+                                setNewColorHex(resolved);
+                              }
+                            }}
+                            className="flex-1 px-3 py-2 border border-gray-200 rounded-lg text-xs focus:outline-none focus:border-accent bg-white shadow-sm" 
+                            placeholder="e.g. Amber Red (Leave blank for auto)" 
+                          />
+                          <div className="flex items-center gap-1.5 bg-white border border-gray-200 px-2.5 py-1.5 rounded-lg shadow-sm min-w-[85px] justify-center shrink-0">
+                            <span 
+                              className="w-3.5 h-3.5 rounded-full border border-gray-300 transition-all shadow-inner shrink-0" 
+                              style={{ backgroundColor: newColorHex }}
+                            ></span>
+                            <span className="text-[9px] font-mono text-gray-500 uppercase tracking-tight">
+                              {newColorHex}
+                            </span>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Pre-select Color presets */}
+                    <div className="mb-4">
+                      <label className="block text-[9px] font-bold text-gray-400 uppercase mb-1">Presets</label>
+                      <div className="flex flex-wrap gap-1.5">
+                        {[
+                          { name: 'Obsidian Charcoal', hex: '#2d2a26' },
+                          { name: 'Alabaster Cream', hex: '#fcfbfa' },
+                          { name: 'Sage Green', hex: '#8fa89b' },
+                          { name: 'Desert Tan', hex: '#cda885' },
+                          { name: 'Burnt Terracotta', hex: '#d46a43' },
+                          { name: 'Silt Gray', hex: '#4a4540' },
+                          { name: 'Luxury Gold', hex: '#dfa124' }
+                        ].map((preset, idx) => (
+                          <button key={idx} type="button"
+                            onClick={() => {
+                              setNewColorName(preset.name);
+                              setNewColorHex(preset.hex);
+                            }}
+                            className="px-2 py-1 bg-white hover:bg-gray-100 border border-gray-200 rounded text-[10px] text-gray-600 flex items-center gap-1 transition-colors"
+                          >
+                            <span className="w-2.5 h-2.5 rounded-full border border-gray-300" style={{ backgroundColor: preset.hex }}></span>
+                            {preset.name}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+
+                    <button type="button"
+                      onClick={() => {
+                        let nameVal = newColorName.trim();
+                        const hexVal = newColorHex;
+                        
+                        if (!nameVal) {
+                          nameVal = getNearestColorName(hexVal);
+                        }
+                        
+                        // Check duplicate
+                        const existing = (form.colorVariants || []);
+                        if (existing.some(v => v.colorName.toLowerCase() === nameVal.toLowerCase())) {
+                          toast('This color variant name is already added', 'warning');
+                          return;
+                        }
+
+                        const newVariant = {
+                          color: hexVal,
+                          colorName: nameVal,
+                          images: []
+                        };
+
+                        set('colorVariants', [...existing, newVariant]);
+                        toast(`Added color "${nameVal}"! Now you can upload photos for it.`, 'success');
+
+                        // Reset input
+                        setNewColorName('');
+                        setNewColorHex('#2d2a26');
+                      }}
+                      className="w-full py-2 border border-accent text-accent hover:bg-accent/5 rounded-lg text-xs font-bold transition-all flex items-center justify-center gap-1 cursor-pointer"
+                    >
+                      <i className="fas fa-plus"></i> Add Color Variant
+                    </button>
+                  </div>
+                </div>
+              </div>
+
+              {/* Right: preview + icon picker */}
+              <div className="space-y-5">
+
+
+                {/* Submit */}
+                <div className="space-y-2">
+                  <button type="submit" disabled={saving}
+                    className="w-full py-3.5 bg-accent text-white rounded-xl font-heading font-bold tracking-widest text-sm hover:bg-accent-dark transition-all shadow-lg shadow-accent/30 disabled:opacity-60 flex items-center justify-center gap-2">
+                    {saving?<><i className="fas fa-spinner fa-spin"></i> Saving…</>:<><i className={`fas ${editProduct?'fa-save':'fa-plus'}`}></i> {editProduct?'SAVE CHANGES':'ADD PRODUCT'}</>}
+                  </button>
+                  {onCancel && (
+                    <button type="button" onClick={onCancel} className="w-full py-2.5 border-2 border-gray-100 text-gray-500 rounded-xl text-sm font-semibold hover:border-gray-300 transition-all">
+                      Cancel
+                    </button>
+                  )}
+                </div>
+              </div>
+
+            </div>
+          </form>
+        </div>
+      );
+    }
+
+    /* ============================================
+       PRODUCTS LIST PAGE
+    ============================================ */
+    function ProductsPage({ products, onEdit, onDelete }) {
+      const [search,   setSearch]   = useState('');
+      const [catF,     setCatF]     = useState('All');
+      const [sort,     setSort]     = useState('newest');
+      const [confirm,  setConfirm]  = useState(null);
+
+      const cats = ['All', ...new Set(products.map(p=>p.category))];
+
+      const list = useMemo(()=>{
+        let r = products.filter(p => {
+          const q = search.toLowerCase();
+          return (!q || p.title.toLowerCase().includes(q) || p.description.toLowerCase().includes(q) || p.category.toLowerCase().includes(q))
+              && (catF==='All' || p.category===catF);
+        });
+        if (sort==='price-low')  r = [...r].sort((a,b)=>a.price-b.price);
+        else if (sort==='price-high') r = [...r].sort((a,b)=>b.price-a.price);
+        else if (sort==='rating')     r = [...r].sort((a,b)=>b.rating-a.rating);
+        else if (sort==='name')       r = [...r].sort((a,b)=>a.title.localeCompare(b.title));
+        else r = [...r].reverse();
+        return r;
+      }, [products, search, catF, sort]);
+
+      return (
+        <div className="space-y-5 fade-in">
+          {/* Header */}
+          <div className="flex items-center justify-between">
+            <div>
+              <h1 className="font-heading text-2xl font-extrabold text-gray-900">Products</h1>
+              <p className="text-gray-400 text-xs mt-0.5">{products.length} items in catalog</p>
+            </div>
+            <button onClick={()=>onEdit(null)} className="flex items-center gap-2 px-4 py-2 bg-accent text-white text-sm font-semibold rounded-xl hover:bg-accent-dark transition-colors shadow-lg shadow-accent/30">
+              <i className="fas fa-plus"></i> Add Product
+            </button>
+          </div>
+
+          {/* Filters */}
+          <div className="bg-white rounded-2xl p-4 shadow-sm border border-gray-100 flex flex-wrap gap-3">
+            <div className="relative flex-1 min-w-48">
+              <i className="fas fa-search absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-300 text-sm"></i>
+              <input type="text" placeholder="Search products…" value={search} onChange={e=>setSearch(e.target.value)}
+                className="w-full pl-10 pr-4 py-2.5 bg-gray-50 border-2 border-gray-100 rounded-xl text-sm focus:outline-none focus:border-accent transition-all" />
+            </div>
+            <select value={catF} onChange={e=>setCatF(e.target.value)}
+              className="px-4 py-2.5 bg-gray-50 border-2 border-gray-100 rounded-xl text-sm focus:outline-none focus:border-accent">
+              {cats.map(c=><option key={c}>{c}</option>)}
+            </select>
+            <select value={sort} onChange={e=>setSort(e.target.value)}
+              className="px-4 py-2.5 bg-gray-50 border-2 border-gray-100 rounded-xl text-sm focus:outline-none focus:border-accent">
+              <option value="newest">Newest First</option>
+              <option value="name">Name A–Z</option>
+              <option value="price-low">Price ↑</option>
+              <option value="price-high">Price ↓</option>
+              <option value="rating">Top Rated</option>
+            </select>
+          </div>
+
+          {search && <p className="text-sm text-gray-500">Showing <b className="text-gray-900">{list.length}</b> result{list.length!==1?'s':''} for "<b>{search}</b>"</p>}
+
+          {/* Grid */}
+          {list.length === 0 ? (
+            <div className="bg-white rounded-2xl p-16 text-center shadow-sm border border-gray-100">
+              <div className="text-6xl mb-4">🔍</div>
+              <h3 className="font-heading font-bold text-gray-900 text-xl mb-2">No Products Found</h3>
+              <p className="text-gray-400 text-sm">Try adjusting your search or filter.</p>
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+              {list.map(p => (
+                <div key={p.id} className="bg-white rounded-2xl overflow-hidden shadow-sm border border-gray-100 hover:shadow-md transition-all group">
+                  {/* Icon banner */}
+                  <div className="h-40 flex items-center justify-center text-5xl relative overflow-hidden" style={{background:p.image ? 'none' : p.iconBg}}>
+                    {p.image ? (
+                      <img src={p.image} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-300" alt={p.title} />
+                    ) : (
+                      <span className="group-hover:scale-110 transition-transform duration-300 block">{p.icon}</span>
+                    )}
+                    {/* Badges */}
+                    <div className="absolute top-2.5 left-2.5 flex gap-1.5">
+                      {p.originalPrice && <span className="bg-red-500 text-white text-[10px] font-bold px-2 py-0.5 rounded-md">SALE</span>}
+                      {p.popularity>95  && <span className="bg-gray-900 text-white text-[10px] font-bold px-2 py-0.5 rounded-md">BEST</span>}
+                    </div>
+                    {/* Hover actions */}
+                    <div className="absolute top-2.5 right-2.5 flex gap-1.5 opacity-0 group-hover:opacity-100 transition-opacity">
+                      <button onClick={()=>onEdit(p)} className="w-8 h-8 bg-white rounded-lg flex items-center justify-center shadow-md text-accent hover:bg-accent hover:text-white transition-colors" title="Edit">
+                        <i className="fas fa-pen text-xs"></i>
+                      </button>
+                      <button onClick={()=>setConfirm(p)} className="w-8 h-8 bg-white rounded-lg flex items-center justify-center shadow-md text-red-500 hover:bg-red-500 hover:text-white transition-colors" title="Delete">
+                        <i className="fas fa-trash text-xs"></i>
+                      </button>
+                    </div>
+                  </div>
+
+                  {/* Body */}
+                  <div className="p-4">
+                    <p className="text-[10px] text-gray-400 uppercase tracking-wider">{p.category}</p>
+                    <h3 className="font-heading font-semibold text-gray-900 leading-tight mb-1 truncate">{p.title}</h3>
+                    <p className="text-gray-400 text-xs line-clamp-2 mb-3">{p.description}</p>
+                    <div className="flex items-center justify-between pt-3 border-t border-gray-100">
+                      <div>
+                        {p.originalPrice && <span className="text-xs text-gray-400 line-through block">Br {p.originalPrice.toFixed(2)}</span>}
+                        <span className="font-bold text-accent">Br {p.price.toFixed(2)}</span>
+                      </div>
+                      <div className="flex flex-col items-end gap-1">
+                        <p className="text-xs text-amber-500 font-semibold">★ {p.rating} <span className="text-gray-400">({p.reviews})</span></p>
+                        <div className="flex gap-2 text-xs">
+                          <button onClick={()=>onEdit(p)} className="text-accent font-semibold hover:underline">Edit</button>
+                          <span className="text-gray-200">|</span>
+                          <button onClick={()=>setConfirm(p)} className="text-red-400 font-semibold hover:underline">Delete</button>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+
+          <ConfirmModal open={!!confirm} title="Delete Product?"
+            message={`"${confirm?.title}" will be permanently removed from the catalog.`}
+            onConfirm={()=>{ onDelete(confirm.id); setConfirm(null); }}
+            onCancel={()=>setConfirm(null)} />
+        </div>
+      );
+    }
+
+    /* ============================================
+       ANALYTICS PAGE
+    ============================================ */
+    function AnalyticsPage({ products, categories }) {
+      // ── Product catalog metrics ──────────────────
+      const totalVal  = products.reduce((s,p)=>s+p.price, 0);
+      const avgPrice  = totalVal / (products.length||1);
+      const saleItems = products.filter(p=>p.originalPrice);
+      const savings   = saleItems.reduce((s,p)=>s+(p.originalPrice-p.price), 0);
+      const avgRating = (products.reduce((s,p)=>s+p.rating,0)/(products.length||1)).toFixed(2);
+
+      // ── Customer data from localStorage ─────────
+      const wishlist = useMemo(() => {
+        try { return JSON.parse(localStorage.getItem('aura_wishlist')) || []; }
+        catch { return []; }
+      }, []);
+
+      const searchHistory = useMemo(() => {
+        try { return JSON.parse(localStorage.getItem('aura_search_history')) || []; }
+        catch { return []; }
+      }, []);
+
+      // ── Top Rated products (rating 4.5–5.0) ─────
+      const topRated = useMemo(() =>
+        [...products]
+          .filter(p => p.rating >= 4.5)
+          .sort((a,b) => b.rating - a.rating || b.reviews - a.reviews),
+      [products]);
+
+      // ── Most Favorited ───────────────────────────
+      // Count how many times each product appears in real wishlist data
+      const mostFavorited = useMemo(() =>
+        products.filter(p => wishlist.includes(p.id)),
+      [products, wishlist]);
+
+      // ── Most Searched (match search terms to products) ───
+      const searchMatches = useMemo(() => {
+        if (!searchHistory.length) return [];
+        const scored = products.map(p => {
+          let score = 0;
+          searchHistory.forEach((q, idx) => {
+            const term = q.toLowerCase();
+            const hit = (p.title + ' ' + p.category + ' ' + p.description).toLowerCase().includes(term);
+            if (hit) score += (searchHistory.length - idx); // recency weight
+          });
+          return { product: p, score };
+        }).filter(x => x.score > 0).sort((a,b) => b.score - a.score);
+        return scored.map(x => x.product);
+      }, [products, searchHistory]);
+
+      // ── Category breakdown ───────────────────────
+      const catData = categories.map(cat=>{
+        const ps = products.filter(p=>p.category===cat);
+        return { cat, count:ps.length, value:ps.reduce((s,p)=>s+p.price,0),
+          avgR: ps.length?(ps.reduce((s,p)=>s+p.rating,0)/ps.length).toFixed(1):0 };
+      }).filter(c=>c.count>0).sort((a,b)=>b.value-a.value);
+      const maxVal = Math.max(...catData.map(c=>c.value),1);
+
+      const BAR_COLORS = ['bg-accent','bg-blue-500','bg-emerald-500','bg-purple-500','bg-amber-500','bg-pink-500','bg-indigo-500','bg-teal-500'];
+
+      // ── Mini product row renderer ─────────────────
+      const ProductInsightRow = ({ p, index, badge, badgeColor }) => (
+        <div className="flex items-center gap-3 py-2.5 border-b border-gray-50 last:border-0">
+          <div className={`w-6 h-6 rounded-lg flex items-center justify-center font-bold text-[11px] flex-shrink-0 ${index===0?'bg-amber-400 text-white':index===1?'bg-gray-300 text-gray-700':index===2?'bg-amber-700/60 text-white':'bg-gray-100 text-gray-500'}`}>
+            {index+1}
+          </div>
+          {p.image ? (
+            <img src={p.image} className="w-9 h-9 rounded-lg object-cover flex-shrink-0" alt="" />
+          ) : (
+            <div className="w-9 h-9 rounded-lg flex items-center justify-center text-xl flex-shrink-0" style={{background:p.iconBg}}>{p.icon}</div>
+          )}
+          <div className="flex-1 min-w-0">
+            <p className="text-sm font-semibold text-gray-900 truncate">{p.title}</p>
+            <p className="text-[11px] text-gray-400">{p.category}</p>
+          </div>
+          <span className={`text-[11px] font-bold px-2 py-0.5 rounded-full ${badgeColor}`}>{badge}</span>
+        </div>
+      );
+
+      return (
+        <div className="space-y-6 fade-in">
+          <div>
+            <h1 className="font-heading text-2xl font-extrabold text-gray-900">Analytics</h1>
+            <p className="text-gray-400 text-xs mt-0.5">Real customer insights from favorites, searches & product ratings</p>
+          </div>
+
+          {/* KPI Stats */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+            <StatsCard icon="fas fa-money-bill-wave" label="Catalog Value"  value={`Br ${totalVal.toLocaleString()}`}  bg="bg-accent"      />
+            <StatsCard icon="fas fa-star"            label="Avg Rating"    value={`${avgRating} ★`}                   bg="bg-amber-500"   />
+            <StatsCard icon="fas fa-heart"           label="Favorited"     value={wishlist.length} sub="items saved by customers" bg="bg-pink-500" />
+            <StatsCard icon="fas fa-search"          label="Searches"      value={searchHistory.length} sub="unique search queries" bg="bg-blue-500" />
+          </div>
+
+          {/* Row 1: Top Rated + Most Favorited */}
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
+
+            {/* Top Rated (4.5–5.0) */}
+            <div className="bg-white rounded-2xl p-5 shadow-sm border border-gray-100">
+              <div className="flex items-center gap-2 mb-1">
+                <span className="w-8 h-8 rounded-xl bg-amber-50 flex items-center justify-center">
+                  <i className="fas fa-star text-amber-500 text-sm"></i>
+                </span>
+                <div>
+                  <h2 className="font-heading font-bold text-gray-900 leading-tight">Top Rated Products</h2>
+                  <p className="text-[11px] text-gray-400">Rating 4.5 – 5.0 stars</p>
+                </div>
+              </div>
+              <div className="mt-4">
+                {topRated.length === 0 ? (
+                  <p className="text-gray-400 text-sm text-center py-6">No products rated 4.5+ yet.</p>
+                ) : (
+                  topRated.slice(0,6).map((p,i) => (
+                    <ProductInsightRow key={p.id} p={p} index={i}
+                      badge={`★ ${p.rating}`}
+                      badgeColor="bg-amber-50 text-amber-600" />
+                  ))
+                )}
+              </div>
+            </div>
+
+            {/* Most Favorited */}
+            <div className="bg-white rounded-2xl p-5 shadow-sm border border-gray-100">
+              <div className="flex items-center gap-2 mb-1">
+                <span className="w-8 h-8 rounded-xl bg-pink-50 flex items-center justify-center">
+                  <i className="fas fa-heart text-pink-500 text-sm"></i>
+                </span>
+                <div>
+                  <h2 className="font-heading font-bold text-gray-900 leading-tight">Most Favorited</h2>
+                  <p className="text-[11px] text-gray-400">Saved by customers to their wishlists</p>
+                </div>
+              </div>
+              <div className="mt-4">
+                {mostFavorited.length === 0 ? (
+                  <div className="text-center py-8">
+                    <div className="text-3xl mb-2">🤍</div>
+                    <p className="text-gray-400 text-sm">No customer favorites recorded yet.</p>
+                    <p className="text-gray-300 text-xs mt-1">Data populates when customers save items.</p>
+                  </div>
+                ) : (
+                  mostFavorited.slice(0,6).map((p,i) => (
+                    <ProductInsightRow key={p.id} p={p} index={i}
+                      badge="❤️ Saved"
+                      badgeColor="bg-pink-50 text-pink-600" />
+                  ))
+                )}
+              </div>
+            </div>
+          </div>
+
+          {/* Row 2: Most Searched */}
+          <div className="grid grid-cols-1 gap-5">
+
+            {/* Most Searched */}
+            <div className="bg-white rounded-2xl p-5 shadow-sm border border-gray-100">
+              <div className="flex items-center gap-2 mb-1">
+                <span className="w-8 h-8 rounded-xl bg-blue-50 flex items-center justify-center">
+                  <i className="fas fa-search text-blue-500 text-sm"></i>
+                </span>
+                <div>
+                  <h2 className="font-heading font-bold text-gray-900 leading-tight">Most Searched</h2>
+                  <p className="text-[11px] text-gray-400">Products matching customer search queries</p>
+                </div>
+              </div>
+
+              {/* Search term chips */}
+              {searchHistory.length > 0 && (
+                <div className="flex flex-wrap gap-1.5 mt-3 mb-3">
+                  {searchHistory.slice(0,6).map((q,i) => (
+                    <span key={i} className="px-2.5 py-1 bg-blue-50 text-blue-600 rounded-full text-[11px] font-semibold">
+                      🔍 {q}
+                    </span>
+                  ))}
+                </div>
+              )}
+
+              <div className="mt-2">
+                {searchMatches.length === 0 ? (
+                  <div className="text-center py-8">
+                    <div className="text-3xl mb-2">🔍</div>
+                    <p className="text-gray-400 text-sm">No search activity recorded yet.</p>
+                    <p className="text-gray-300 text-xs mt-1">Data populates as customers search the store.</p>
+                  </div>
+                ) : (
+                  searchMatches.slice(0,6).map((p,i) => (
+                    <ProductInsightRow key={p.id} p={p} index={i}
+                      badge="🔍 Searched"
+                      badgeColor="bg-blue-50 text-blue-600" />
+                  ))
+                )}
+              </div>
+            </div>
+          </div>
+
+          {/* Store Summary dark card */}
+          <div className="bg-gradient-to-br from-gray-950 to-gray-800 rounded-2xl p-5 text-white">
+            <h2 className="font-heading font-bold text-lg mb-5">Store Summary</h2>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+              {[
+                {label:'Total Products',       val: products.length,                               icon:'fa-box-open'},
+                {label:'Avg Catalog Price',    val: `Br ${avgPrice.toFixed(0)}`,                   icon:'fa-tag'},
+                {label:'Products on Sale',     val: saleItems.length,                              icon:'fa-percentage'},
+                {label:'Average Rating',       val: `${avgRating} ★`,                             icon:'fa-star'},
+                {label:'Customer Favorites',   val: wishlist.length,                               icon:'fa-heart'},
+                {label:'Search Queries',       val: searchHistory.length,                         icon:'fa-search'},
+              ].map(r=>(
+                <div key={r.label} className="bg-white/5 rounded-xl p-3 flex items-center gap-3">
+                  <div className="w-8 h-8 rounded-lg bg-white/10 flex items-center justify-center flex-shrink-0">
+                    <i className={`fas ${r.icon} text-accent text-xs`}></i>
+                  </div>
+                  <div className="min-w-0">
+                    <p className="text-[11px] text-gray-400 leading-tight">{r.label}</p>
+                    <p className="text-sm font-bold text-white truncate">{r.val}</p>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      );
+    }
+
+    /* ============================================
+       SETTINGS PAGE
+    ============================================ */
+    function SettingsPage({ toast, categories, onAddCategory, onDeleteCategory }) {
+      const [storeName, setStoreName] = useState('ELAWI');
+      const [currency,  setCurrency]  = useState('Br');
+      const [newPass,   setNewPass]   = useState('');
+      const [confPass,  setConfPass]  = useState('');
+      const [newCategory, setNewCategory] = useState('');
+
+      const defaultCats = ['Traditional', 'Modern Cut', 'Minimalist', 'Lounge Wear'];
+
+      const handleAddCategoryClick = () => {
+        const trimmed = newCategory.trim();
+        if (!trimmed) {
+          toast('Category name cannot be empty', 'error');
+          return;
+        }
+        const success = onAddCategory(trimmed);
+        if (success) {
+          setNewCategory('');
+        }
+      };
+
+      return (
+        <div className="space-y-6 max-w-2xl fade-in">
+          <div>
+            <h1 className="font-heading text-2xl font-extrabold text-gray-900">Settings</h1>
+            <p className="text-gray-400 text-xs mt-0.5">Manage store configuration and admin credentials</p>
+          </div>
+
+          {/* Store Settings */}
+          <div className="bg-white rounded-2xl p-5 shadow-sm border border-gray-100">
+            <h2 className="font-heading font-bold text-gray-900 mb-4 flex items-center gap-2 text-sm uppercase tracking-wider">
+              <i className="fas fa-store text-accent"></i> Store Settings
+            </h2>
+            <div className="space-y-4">
+              <div>
+                <label className="block text-[11px] font-bold text-gray-500 uppercase tracking-widest mb-1.5">Store Name</label>
+                <input value={storeName} onChange={e=>setStoreName(e.target.value)}
+                  className="w-full px-4 py-2.5 border-2 border-gray-100 rounded-xl bg-gray-50 text-sm focus:outline-none focus:border-accent focus:bg-white transition-all" />
+              </div>
+              <div>
+                <label className="block text-[11px] font-bold text-gray-500 uppercase tracking-widest mb-1.5">Currency</label>
+                <select value={currency} onChange={e=>setCurrency(e.target.value)}
+                  className="w-full px-4 py-2.5 border-2 border-gray-100 rounded-xl bg-gray-50 text-sm focus:outline-none focus:border-accent transition-all">
+                  <option value="Br">Br – Ethiopian Birr</option>
+                  <option value="EUR">EUR – Euro</option>
+                  <option value="GBP">GBP – British Pound</option>
+                  <option value="JPY">JPY – Japanese Yen</option>
+                </select>
+              </div>
+              <button onClick={()=>toast('Store settings saved!','success')}
+                className="px-5 py-2.5 bg-accent text-white rounded-xl text-sm font-semibold hover:bg-accent-dark transition-colors">
+                <i className="fas fa-save mr-2"></i>Save Settings
+              </button>
+            </div>
+          </div>
+
+          {/* Manage Categories */}
+          <div className="bg-white rounded-2xl p-5 shadow-sm border border-gray-100">
+            <h2 className="font-heading font-bold text-gray-900 mb-4 flex items-center gap-2 text-sm uppercase tracking-wider">
+              <i className="fas fa-tags text-accent"></i> Manage Categories
+            </h2>
+            <p className="text-gray-400 text-xs mb-4">View existing categories and add or remove custom categories.</p>
+            
+            {/* Displaying Categories */}
+            <div className="flex flex-wrap gap-2 mb-5">
+              {categories.map(c => {
+                const isDefault = defaultCats.includes(c);
+                return (
+                  <span key={c} className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold select-none transition-all
+                    ${isDefault ? 'bg-gray-100 text-gray-600' : 'bg-accent/10 text-accent border border-accent/20'}`}>
+                    <span>{c}</span>
+                    {!isDefault && (
+                      <button type="button" onClick={() => onDeleteCategory(c)} className="w-4 h-4 rounded-full bg-accent/20 hover:bg-accent/30 text-accent flex items-center justify-center text-[10px] transition-colors focus:outline-none">
+                        <i className="fas fa-times"></i>
+                      </button>
+                    )}
+                  </span>
+                );
+              })}
+            </div>
+
+            {/* Adding Category */}
+            <div className="flex gap-2">
+              <input type="text" value={newCategory} onChange={e=>setNewCategory(e.target.value)} placeholder="e.g. Activewear"
+                className="flex-1 px-4 py-2 border-2 border-gray-100 rounded-xl bg-gray-50 text-sm focus:outline-none focus:border-accent focus:bg-white transition-all" />
+              <button type="button" onClick={handleAddCategoryClick}
+                className="px-5 py-2 bg-accent text-white rounded-xl text-sm font-semibold hover:bg-accent-dark transition-colors flex items-center gap-2">
+                <i className="fas fa-plus"></i> Add
+              </button>
+            </div>
+          </div>
+
+          {/* Change Password */}
+          <div className="bg-white rounded-2xl p-5 shadow-sm border border-gray-100">
+            <h2 className="font-heading font-bold text-gray-900 mb-4 flex items-center gap-2 text-sm uppercase tracking-wider">
+              <i className="fas fa-lock text-accent"></i> Change Password
+            </h2>
+            <div className="space-y-4">
+              <div>
+                <label className="block text-[11px] font-bold text-gray-500 uppercase tracking-widest mb-1.5">New Password</label>
+                <input type="password" value={newPass} onChange={e=>setNewPass(e.target.value)} placeholder="••••••••"
+                  className="w-full px-4 py-2.5 border-2 border-gray-100 rounded-xl bg-gray-50 text-sm focus:outline-none focus:border-accent focus:bg-white transition-all" />
+              </div>
+              <div>
+                <label className="block text-[11px] font-bold text-gray-500 uppercase tracking-widest mb-1.5">Confirm Password</label>
+                <input type="password" value={confPass} onChange={e=>setConfPass(e.target.value)} placeholder="••••••••"
+                  className="w-full px-4 py-2.5 border-2 border-gray-100 rounded-xl bg-gray-50 text-sm focus:outline-none focus:border-accent focus:bg-white transition-all" />
+              </div>
+              <button onClick={()=>{
+                  if (!newPass) return toast('Enter a new password','error');
+                  if (newPass!==confPass) return toast('Passwords do not match','error');
+                  if (newPass.length<6)  return toast('Password must be 6+ characters','error');
+                  
+                  fetch('api/admin.php', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ action: 'change_password', newPassword: newPass })
+                  })
+                  .then(res => {
+                    if (res.ok) {
+                      localStorage.setItem('aura_admin_password', newPass);
+                      toast('Password updated successfully on server!','success');
+                      setNewPass(''); setConfPass('');
+                    } else {
+                      toast('Failed to update password on server','error');
+                    }
+                  })
+                  .catch(err => {
+                    console.error(err);
+                    localStorage.setItem('aura_admin_password', newPass);
+                    toast('Password updated locally (Offline)','info');
+                    setNewPass(''); setConfPass('');
+                  });
+                }}
+                className="px-5 py-2.5 bg-gray-900 text-white rounded-xl text-sm font-semibold hover:bg-accent transition-colors">
+                <i className="fas fa-key mr-2"></i>Update Password
+              </button>
+            </div>
+          </div>
+
+          {/* Danger Zone */}
+          <div className="bg-white rounded-2xl p-5 shadow-sm border-2 border-red-100">
+            <h2 className="font-heading font-bold text-red-500 mb-2 flex items-center gap-2 text-sm uppercase tracking-wider">
+              <i className="fas fa-exclamation-triangle"></i> Danger Zone
+            </h2>
+            <p className="text-gray-400 text-sm mb-4">Reset all products to the default catalog. This cannot be undone.</p>
+            <button onClick={()=>{
+                if (window.confirm('This will reset ALL products to defaults. Are you sure?')) {
+                  fetch('api/products.php?action=reset', { method: 'POST' })
+                  .then(res => {
+                    if (res.ok) {
+                      localStorage.removeItem('aura_admin_products');
+                      toast('Products reset to defaults on server.','success');
+                      setTimeout(() => window.location.reload(), 1000);
+                    } else {
+                      toast('Server reset failed','error');
+                    }
+                  })
+                  .catch(() => {
+                    localStorage.removeItem('aura_admin_products');
+                    toast('Products reset locally (Offline).','info');
+                    setTimeout(() => window.location.reload(), 1000);
+                  });
+                }
+              }}
+              className="px-5 py-2.5 bg-red-500 text-white rounded-xl text-sm font-semibold hover:bg-red-600 transition-colors">
+              <i className="fas fa-undo mr-2"></i>Reset to Defaults
+            </button>
+          </div>
+        </div>
+      );
+    }
+
+    /* ============================================
+       MAIN APP
+    ============================================ */
+    function App() {
+      const [auth,      setAuth]      = useState(isLoggedIn);
+      const [page,      setPage]      = useState('dashboard');
+      const [editProd,  setEditProd]  = useState(null);
+      const [products,  setProducts]  = useState([]);
+      const [categories, setCategories] = useState([]);
+      const [loading,   setLoading]   = useState(true);
+      const [collapsed, setCollapsed] = useState(() => window.innerWidth < 768);
+
+      const { toasts, add: toast, remove } = useToast();
+
+      // Fetch products and categories on mount if authenticated
+      useEffect(() => {
+        if (auth) {
+          setLoading(true);
+          Promise.all([
+            fetch('api/products.php', { cache: 'no-store' }).then(res => {
+              if (!res.ok) throw new Error('Failed to load products');
+              return res.json();
+            }),
+            fetch('api/categories.php', { cache: 'no-store' }).then(res => {
+              if (!res.ok) throw new Error('Failed to load categories');
+              return res.json();
+            })
+          ])
+          .then(([prodList, catList]) => {
+            setProducts(prodList);
+            setCategories(catList);
+            setLoading(false);
+          })
+          .catch(err => {
+            console.error("API error, using local fallback", err);
+            // Local fallback
+            const localProds = dbGetProducts();
+            const defaultCats = ['Traditional', 'Modern Cut', 'Minimalist', 'Lounge Wear'];
+            let localCats = defaultCats;
+            try {
+              const saved = JSON.parse(localStorage.getItem('aura_categories'));
+              if (saved && Array.isArray(saved)) {
+                localCats = [...new Set([...defaultCats, ...saved])];
+              }
+            } catch (e) {}
+            setProducts(localProds);
+            setCategories(localCats);
+            setLoading(false);
+            toast('Loaded from browser local storage (offline)', 'warning');
+          });
+        }
+      }, [auth]);
+
+      const handleAddCategory = useCallback((newCat) => {
+        const trimmed = newCat.trim();
+        if (!trimmed) {
+          toast('Category name cannot be empty', 'error');
+          return false;
+        }
+        if (categories.some(c => c.toLowerCase() === trimmed.toLowerCase())) {
+          toast(`Category "${trimmed}" already exists`, 'error');
+          return false;
+        }
+
+        fetch('api/categories.php', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ name: trimmed })
+        })
+        .then(res => {
+          if (res.ok) {
+            toast(`Category "${trimmed}" saved to server!`, 'success');
+          } else {
+            toast('Failed to save category on server', 'error');
+          }
+        })
+        .catch(err => {
+          console.error(err);
+          toast(`Category "${trimmed}" saved locally (Offline)`, 'info');
+        });
+
+        const updated = [...categories, trimmed];
+        setCategories(updated);
+        
+        const defaultCats = ['Traditional', 'Modern Cut', 'Minimalist', 'Lounge Wear'];
+        const custom = updated.filter(c => !defaultCats.includes(c));
+        localStorage.setItem('aura_categories', JSON.stringify(custom));
+        
+        return true;
+      }, [categories, toast]);
+
+      const handleDeleteCategory = useCallback((catToDelete) => {
+        const defaultCats = ['Traditional', 'Modern Cut', 'Minimalist', 'Lounge Wear'];
+        if (defaultCats.includes(catToDelete)) {
+          toast('Cannot delete default categories', 'error');
+          return;
+        }
+
+        fetch(`api/categories.php?name=${encodeURIComponent(catToDelete)}`, {
+          method: 'DELETE'
+        })
+        .then(res => {
+          if (res.ok) {
+            toast(`Category "${catToDelete}" removed from server`, 'success');
+          } else {
+            toast('Failed to delete category on server', 'error');
+          }
+        })
+        .catch(err => {
+          console.error(err);
+          toast(`Category "${catToDelete}" removed locally (Offline)`, 'info');
+        });
+
+        const updated = categories.filter(c => c !== catToDelete);
+        setCategories(updated);
+
+        const custom = updated.filter(c => !defaultCats.includes(c));
+        localStorage.setItem('aura_categories', JSON.stringify(custom));
+      }, [categories, toast]);
+
+      const logout = useCallback(()=>{ sessionStorage.removeItem('aura_admin_auth'); setAuth(false); }, []);
+
+      const handleSave = useCallback(prod => {
+        toast('Saving product...', 'info');
+        
+        fetch('api/products.php', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(prod)
+        })
+        .then(async res => {
+          if (!res.ok) throw new Error('Save failed');
+          const savedProd = await res.json();
+          
+          setProducts(prev => {
+            const idx = prev.findIndex(p=>p.id===savedProd.id);
+            const updated = idx > -1 ? prev.map(p=>p.id===savedProd.id?savedProd:p) : [...prev, savedProd];
+            dbSaveProducts(updated);
+            return updated;
+          });
+          
+          toast(editProd ? `"${prod.title}" updated!` : `"${prod.title}" added to catalog!`, 'success');
+          setEditProd(null);
+          setPage('products');
+        })
+        .catch(err => {
+          console.error(err);
+          // Fallback to local
+          setProducts(prev => {
+            const idx = prev.findIndex(p=>p.id===prod.id);
+            const updated = idx > -1 ? prev.map(p=>p.id===prod.id?prod:p) : [...prev, prod];
+            dbSaveProducts(updated);
+            return updated;
+          });
+          toast(`Saved locally (Offline Mode)`, 'warning');
+          setEditProd(null);
+          setPage('products');
+        });
+      }, [editProd, toast]);
+
+      const handleDelete = useCallback(id => {
+        fetch(`api/products.php?id=${id}`, {
+          method: 'DELETE'
+        })
+        .then(res => {
+          if (res.ok) {
+            toast('Product removed from database catalog.', 'success');
+          } else {
+            toast('Failed to delete product on server', 'error');
+          }
+        })
+        .catch(err => {
+          console.error(err);
+          toast('Product removed locally (Offline Mode).', 'info');
+        });
+
+        setProducts(prev => {
+          const u = prev.filter(p=>p.id!==id);
+          dbSaveProducts(u);
+          return u;
+        });
+      }, [toast]);
+
+      const handleEdit = useCallback(prod => { setEditProd(prod); setPage('add'); }, []);
+
+      const navigate = useCallback(p => {
+        if (p !== 'add') setEditProd(null);
+        setPage(p);
+        if (window.innerWidth < 768) {
+          setCollapsed(true);
+        }
+      }, [setPage, setEditProd, setCollapsed]);
+
+      if (!auth) return <LoginPage onLogin={()=>setAuth(true)} />;
+
+      if (loading) {
+        return (
+          <div className="min-h-screen flex flex-col items-center justify-center bg-gray-50">
+            <div className="text-center">
+              <i className="fas fa-circle-notch fa-spin text-accent text-4xl mb-4"></i>
+              <p className="font-heading font-semibold text-gray-900">Loading catalog from database...</p>
+            </div>
+            <Toast toasts={toasts} remove={remove} />
+          </div>
+        );
+      }
+
+      const ml = collapsed ? 'md:ml-[72px] ml-0' : 'md:ml-60 ml-0';
+
+      const renderPage = () => {
+        switch(page) {
+          case 'dashboard': return <DashboardPage products={products} setPage={navigate} categories={categories} />;
+          case 'products':  return <ProductsPage products={products} onEdit={handleEdit} onDelete={handleDelete} />;
+          case 'add':       return <ProductFormPage editProduct={editProd} onSave={handleSave}
+                                     onCancel={editProd?()=>{setEditProd(null);setPage('products');}:null}
+                                     toast={toast} categories={categories} onAddCategory={handleAddCategory} />;
+          case 'analytics': return <AnalyticsPage products={products} categories={categories} />;
+          case 'settings':  return <SettingsPage toast={toast} categories={categories} onAddCategory={handleAddCategory} onDeleteCategory={handleDeleteCategory} />;
+          default:          return <DashboardPage products={products} setPage={navigate} categories={categories} />;
+        }
+      };
+
+      return (
+        <div className="min-h-screen bg-gray-50 overflow-x-hidden">
+          <Sidebar page={page} setPage={navigate} onLogout={logout} collapsed={collapsed} setCollapsed={setCollapsed} />
+          
+          {!collapsed && (
+            <div onClick={() => setCollapsed(true)} className="fixed inset-0 bg-black/40 z-30 md:hidden transition-opacity" />
+          )}
+
+          <div className={`${ml} min-h-screen flex flex-col transition-all duration-300`}>
+            {/* Top bar */}
+            <header className="bg-white border-b border-gray-100 h-16 px-4 md:px-6 flex items-center justify-between sticky top-0 z-20 shadow-sm">
+              <div className="flex items-center gap-3">
+                <button onClick={() => setCollapsed(false)} className="md:hidden w-8 h-8 flex items-center justify-center rounded-lg hover:bg-gray-100 text-gray-600 focus:outline-none">
+                  <i className="fas fa-bars text-sm"></i>
+                </button>
+                <div>
+                  <h2 className="font-heading font-bold text-gray-900 capitalize text-sm">
+                    {page==='add'?(editProd?'Edit Product':'Add Product'):page}
+                  </h2>
+                  <p className="text-[11px] text-gray-400">ELAWI Admin Portal</p>
+                </div>
+              </div>
+              <div className="flex items-center gap-3">
+                <div className="hidden sm:block text-right">
+                  <p className="text-xs font-semibold text-gray-900">Administrator</p>
+                  <p className="text-[11px] text-gray-400">{new Date().toLocaleDateString('en-US',{weekday:'short',month:'short',day:'numeric'})}</p>
+                </div>
+                <div className="w-8 h-8 bg-accent rounded-full flex items-center justify-center font-heading font-bold text-white text-xs">AD</div>
+              </div>
+            </header>
+
+            {/* Page content */}
+            <main className="flex-1 p-6 lg:p-8">
+              {renderPage()}
+            </main>
+          </div>
+
+          <Toast toasts={toasts} remove={remove} />
+        </div>
+      );
+    }
+
+    ReactDOM.createRoot(document.getElementById('root')).render(<App />);
+  </script>
+  <script>
+    (function() {
+      const template = document.getElementById('admin-app-template');
+      if (!template || !window.Babel) return;
+      try {
+        const transformed = Babel.transform(template.textContent, {
+          presets: [["react", { runtime: "classic" }]]
+        }).code;
+        const script = document.createElement('script');
+        script.text = transformed;
+        document.body.appendChild(script);
+      } catch (error) {
+        console.error('Admin app compile failed:', error);
+      }
+    })();
+  </script>
+</body>
+</html>

@@ -1,0 +1,472 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>VIP Member Portal | ELAWI Club</title>
+  <meta name="description" content="Access your order history, edit shipping addresses, view luxury loyalty points, and complete your secure checkout process.">
+  
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <link rel="stylesheet" href="style.css">
+  <script>if(localStorage.getItem('elawi_theme')==='dark')document.documentElement.setAttribute('data-theme','dark');</script>
+</head>
+<body>
+
+  <!-- GLOBAL PREMIUM NAVBAR -->
+  <nav class="navbar" id="navbar">
+    <div class="container flex-between">
+      <div class="menu-toggle" id="menuToggle">
+        <i class="fa-solid fa-bars"></i>
+      </div>
+      <a href="index.html" class="navbar-brand">
+        ELAWI
+      </a>
+      
+      <ul class="nav-menu" id="navMenu">
+        <li><a href="index.html" class="nav-link">Home</a></li>
+        <li><a href="shop.html" class="nav-link">Shop</a></li>
+        <li><a href="about.html" class="nav-link">Our Story</a></li>
+        <li><a href="contact.html" class="nav-link">Contact</a></li>
+        <li><a href="admin.html" class="nav-link" style="color:var(--accent);">Admin</a></li>
+      </ul>
+
+      <div class="navbar-actions">
+        <button class="action-btn" id="searchBtn" title="Search catalog">
+          <i class="fa-solid fa-magnifying-glass"></i>
+        </button>
+        <a href="profile.html#paneFavorites" class="action-btn" title="Favorites / Wishlist">
+          <i class="fa-solid fa-heart"></i>
+          <span class="badge-count wishlist-badge">0</span>
+        </a>
+
+        <a href="profile.html" class="action-btn navbar-user-btn active" title="My Account">
+          <i class="fa-solid fa-user"></i>
+        </a>
+        <button class="theme-toggle-btn" id="themeToggle" title="Toggle dark / light mode" aria-label="Toggle theme">
+          <i class="fa-solid fa-sun icon-sun"></i>
+          <i class="fa-solid fa-moon icon-moon"></i>
+        </button>
+      </div>
+    </div>
+  </nav>
+
+  <!-- SEARCH OVERLAY -->
+  <div class="search-overlay" id="searchOverlay">
+    <div class="search-overlay-close" id="searchClose">
+      <i class="fa-solid fa-xmark"></i>
+    </div>
+    <div class="search-container">
+      <h2>SEARCH THE CATALOG</h2>
+      <div class="search-input-group">
+        <input type="text" id="searchInput" placeholder="Type keyword and press Enter..." autocomplete="off">
+        <i class="fa-solid fa-magnifying-glass"></i>
+      </div>
+    </div>
+  </div>
+
+  <!-- DYNAMIC SHOPPING BAG DRAWER SIDEBAR -->
+  <div class="cart-drawer" id="cartDrawer" style="position: fixed; top: 0; right: -420px; width: 400px; max-width: 90vw; height: 100dvh; background: var(--surface); border-left: 1.5px solid var(--gray-100); z-index: 1500; display: flex; flex-direction: column; transition: var(--transition); box-shadow: var(--shadow-lg);">
+    <div class="cart-drawer-header" style="padding: 1.5rem; border-bottom: 1.5px solid var(--gray-100); display: flex; justify-content: space-between; align-items: center;">
+      <h3 style="font-family: var(--font-heading); font-size: 1.25rem; font-weight: 700;"><i class="fa-solid fa-bag-shopping" style="color: var(--accent); margin-right: 0.5rem;"></i> My Shopping Bag</h3>
+      <button onclick="toggleCartDrawer()" style="font-size: 1.5rem; cursor: pointer; color: var(--gray-500); background:none; border:none;" aria-label="Close cart"><i class="fa-solid fa-xmark"></i></button>
+    </div>
+    <div id="cartSidebarList" style="flex: 1; overflow-y: auto; padding: 1.5rem; display: flex; flex-direction: column; gap: 1.25rem;">
+      <!-- Dynamic list -->
+    </div>
+    <div class="cart-drawer-footer" style="padding: 1.5rem; border-top: 1.5px solid var(--gray-100); background: var(--surface-muted);">
+      <div style="display: flex; justify-content: space-between; font-weight: 700; font-size: 1.1rem; margin-bottom: 1.25rem;">
+        <span>Subtotal</span>
+        <span id="cartSubtotal" style="color: var(--accent);">Br 0</span>
+      </div>
+      <a href="profile.html#paneCheckout" onclick="toggleCartDrawer()" class="btn btn-accent" style="width: 100%; display:inline-flex;">Proceed to Checkout <i class="fa-solid fa-arrow-right-long" style="margin-left: 0.5rem;"></i></a>
+    </div>
+  </div>
+
+  <!-- BLUR BACKDROP OVERLAY -->
+  <div class="overlay" id="sidebarOverlay"></div>
+
+  <!-- TOAST ALERTS NOTIFIER CONTAINER -->
+  <div class="toast-container" id="toastContainer"></div>
+
+  <!-- ===== PROFILE MEMBER PORTAL DASHBOARD ===== -->
+  <div class="container section-padding">
+    <div class="profile-layout" id="profileDashboardPane">
+      
+      <!-- LEFT PORTAL CONTROLS -->
+      <aside class="profile-nav-card">
+        <div class="profile-nav-header">
+          <div class="profile-avatar-circle" id="profileAvatarLabel">U</div>
+          <h3>Hello, <span id="profileGreetingName">Member</span>!</h3>
+          <p>ELAWI Premium Tier Gold</p>
+        </div>
+
+        <ul class="profile-menu-links">
+          <li class="profile-menu-item active" onclick="switchProfilePane('paneDashboard', this)">
+            <i class="fa-solid fa-chart-line"></i> Dashboard
+          </li>
+          <li class="profile-menu-item" onclick="switchProfilePane('paneOrders', this)">
+            <i class="fa-solid fa-box-archive"></i> Order History
+          </li>
+          <li class="profile-menu-item" id="paneFavoritesTrigger" onclick="switchProfilePane('paneFavorites', this)">
+            <i class="fa-solid fa-heart"></i> Saved Favorites
+          </li>
+          <li class="profile-menu-item" id="paneCheckoutTrigger" onclick="switchProfilePane('paneCheckout', this)">
+            <i class="fa-solid fa-credit-card"></i> Secure Checkout
+          </li>
+          <li class="profile-menu-item" onclick="switchProfilePane('paneSettings', this)">
+            <i class="fa-solid fa-sliders"></i> Account Settings
+          </li>
+          <li class="profile-menu-item profile-logout-trigger profile-logout-btn" style="margin-top: 1.5rem; border:none; justify-content:center;">
+            <i class="fa-solid fa-arrow-right-from-bracket"></i> Sign Out
+          </li>
+        </ul>
+      </aside>
+
+      <!-- RIGHT DATA VIEWS PANES -->
+      <section class="profile-views-wrap">
+        
+        <!-- Greeting Status Info (shared) -->
+        <div class="profile-user-greeting">
+          <div class="greeting-avatar"><i class="fa-solid fa-gem"></i></div>
+          <div class="greeting-text">
+            <h3>VIP Gold Membership Status</h3>
+            <p>You have accumulated complimentary shopping bonuses and premium express delivery privileges.</p>
+          </div>
+          <button class="profile-logout-btn profile-logout-trigger"><i class="fa-solid fa-arrow-right-from-bracket"></i> Sign Out</button>
+        </div>
+
+        <!-- ── PANE 1: OVERVIEW ── -->
+        <div class="profile-pane active" id="paneDashboard">
+          <h2>Member Dashboard</h2>
+          
+          <div class="dashboard-banners" style="margin-bottom: 2.5rem;">
+            <!-- Loyalty Card -->
+            <div class="banner-card">
+              <div class="banner-card-head">
+                <h4>LOYALTY POINTS</h4>
+                <span>VIP</span>
+              </div>
+              <div class="banner-card-body">
+                <i class="fa-solid fa-gem" style="font-size:2.5rem; color:var(--gold);"></i>
+                <div>
+                  <h1 style="font-size:2.2rem; line-height:1;"><span id="profilePointsVal">200</span></h1>
+                  <p style="font-size:0.8rem; color:var(--gray-500); margin:0;">Points available for vouchers</p>
+                </div>
+              </div>
+              <div class="banner-card-foot">
+                <a href="#" onclick="showToast('Voucher creation has been simulated!', 'info')">Redeem Br 50 Coupon &rarr;</a>
+              </div>
+            </div>
+
+            <!-- Profile Overview Card -->
+            <div class="banner-card">
+              <div class="banner-card-head">
+                <h4>CONTACT INFORMATION</h4>
+                <span>MEMBERSHIP</span>
+              </div>
+              <div class="banner-card-body" style="align-items:flex-start; flex-direction:column; justify-content:center; gap:0.25rem;">
+                <strong id="profileNameVal" style="font-size:1rem;">Member Name</strong>
+                <span id="profileEmailVal" style="font-size:0.85rem; color:var(--gray-500);">member@example.com</span>
+              </div>
+              <div class="banner-card-foot">
+                <a href="#" onclick="switchProfilePane('paneSettings', document.querySelectorAll('.profile-menu-item')[4])">Modify Profile Details &rarr;</a>
+              </div>
+            </div>
+          </div>
+
+          <h3 style="font-size:1.3rem; margin-bottom:1.5rem;"><i class="fa-solid fa-fire" style="color:var(--accent); margin-right:0.5rem;"></i> Seasonal Recommends For You</h3>
+          <div class="rec-scroll">
+            <a href="shop.html?category=Traditional" class="rec-item">
+              <div class="rec-thumb" style="background:#fbfaf8;">👗</div>
+              <div class="rec-meta">
+                <strong>Alabaster Dress</strong>
+                <span style="font-size:0.75rem; color:var(--gray-500);">Traditional Collection</span>
+              </div>
+            </a>
+            <a href="shop.html?category=Minimalist" class="rec-item">
+              <div class="rec-thumb" style="background:#f5ece4;">🥋</div>
+              <div class="rec-meta">
+                <strong>Obsidian Boubou</strong>
+                <span style="font-size:0.75rem; color:var(--gray-500);">Minimalist Look</span>
+              </div>
+            </a>
+            <a href="shop.html?category=Modern Cut" class="rec-item">
+              <div class="rec-thumb" style="background:#eaeef4;">🧥</div>
+              <div class="rec-meta">
+                <strong>Terracotta Linen</strong>
+                <span style="font-size:0.75rem; color:var(--gray-500);">Linen Suits</span>
+              </div>
+            </a>
+          </div>
+
+        </div>
+
+        <!-- ── PANE 2: ORDERS ── -->
+        <div class="profile-pane" id="paneOrders">
+          <h2>Order History</h2>
+          
+          <div style="border: 1.5px solid var(--gray-100); border-radius: var(--radius-sm); overflow: hidden;">
+            <table style="width: 100%; border-collapse: collapse; text-align: left; font-size: 0.95rem;">
+              <thead>
+                <tr style="background-color: var(--surface-muted); border-bottom: 1.5px solid var(--gray-100); font-weight: 600;">
+                  <th style="padding: 1.25rem 1.5rem;">Order ID</th>
+                  <th style="padding: 1.25rem 1.5rem;">Date</th>
+                  <th style="padding: 1.25rem 1.5rem;">Status</th>
+                  <th style="padding: 1.25rem 1.5rem;">Total</th>
+                  <th style="padding: 1.25rem 1.5rem;">Tracking</th>
+                </tr>
+              </thead>
+              <tbody style="color:var(--gray-500);">
+                <tr style="border-bottom: 1px solid var(--gray-100);">
+                  <td style="padding: 1.25rem 1.5rem; font-weight: 600; color:var(--primary);">#EL-90284</td>
+                  <td style="padding: 1.25rem 1.5rem;">June 18, 2026</td>
+                  <td style="padding: 1.25rem 1.5rem;"><span style="color:var(--success); font-weight: 600; background:rgba(58,130,80,0.12); padding:0.25rem 0.6rem; border-radius:4px; font-size:0.8rem;">Delivered</span></td>
+                  <td style="padding: 1.25rem 1.5rem; font-weight: 700; color:var(--primary);">Br 380</td>
+                  <td style="padding: 1.25rem 1.5rem;"><a href="#" onclick="showToast('DHL Tracking is fully simulated!', 'info')" style="color:var(--accent); text-decoration: underline;">DHL-8928</a></td>
+                </tr>
+                <tr style="border-bottom: 1px solid var(--gray-100);">
+                  <td style="padding: 1.25rem 1.5rem; font-weight: 600; color:var(--primary);">#EL-89410</td>
+                  <td style="padding: 1.25rem 1.5rem;">May 04, 2026</td>
+                  <td style="padding: 1.25rem 1.5rem;"><span style="color:var(--gray-500); font-weight: 600; background:rgba(18,16,14,0.06); padding:0.25rem 0.6rem; border-radius:4px; font-size:0.8rem;">Returned</span></td>
+                  <td style="padding: 1.25rem 1.5rem; font-weight: 700; color:var(--primary);">Br 195</td>
+                  <td style="padding: 1.25rem 1.5rem;"><span style="color:var(--gray-200);">&mdash;</span></td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- ── PANE 3: WISHLIST / SAVED ── -->
+        <div class="profile-pane" id="paneFavorites">
+          <h2>My Bookmarked Wishlist</h2>
+          <div class="grid-2" id="favoritesProfileGrid" style="gap:2rem;">
+            <!-- Dynamically populated favorites -->
+          </div>
+        </div>
+
+        <!-- ── PANE 4: SECURE CHECKOUT ── -->
+        <div class="profile-pane" id="paneCheckout">
+          <h2>Order Checkout & Shipping</h2>
+
+          <div class="checkout-layout-grid" id="checkoutMainWrap" style="display:grid; grid-template-columns: 1.2fr 1fr; gap: 3rem;">
+            <!-- Input Form details -->
+            <form id="checkoutDetailsForm">
+              <h3 style="font-size: 1.15rem; margin-bottom: 1.25rem; border-left: 3px solid var(--accent); padding-left: 0.5rem;">SHIPPING RECIPIENT</h3>
+              
+              <div class="form-group-custom">
+                <label for="checkName">Recipient Full Name</label>
+                <input type="text" id="checkName" class="form-input-styled" placeholder="Jane Doe" required autocomplete="name">
+              </div>
+
+              <div class="form-group-custom">
+                <label for="checkPhone">Active Mobile Phone</label>
+                <input type="tel" id="checkPhone" class="form-input-styled" placeholder="+251-911-XXXXXX" required autocomplete="tel">
+              </div>
+
+              <div class="form-group-custom">
+                <label for="checkAddress">Delivery Street Address</label>
+                <textarea id="checkAddress" class="form-input-styled" rows="3" placeholder="Bole Subcity, Woreda 03, House No. 240, Addis Ababa, Ethiopia" required autocomplete="street-address"></textarea>
+              </div>
+
+              <h3 style="font-size: 1.15rem; margin-top: 2rem; margin-bottom: 1.25rem; border-left: 3px solid var(--accent); padding-left: 0.5rem;">PAYMENT METHOD</h3>
+              <div style="background-color: var(--surface-muted); padding: 1.25rem; border-radius: var(--radius-sm); border: 1.5px solid var(--gray-100); margin-bottom: 2rem;">
+                <label style="display:flex; align-items:center; gap:0.75rem; cursor:pointer; font-weight:600; font-size:0.95rem;">
+                  <input type="radio" name="paymentOption" checked style="accent-color:var(--accent); width:18px; height:18px;">
+                  <span>Cash on Delivery (COD) / Bank Transfer in Addis Ababa</span>
+                </label>
+                <p style="color:var(--gray-500); font-size:0.8rem; margin-top:0.5rem; padding-left:1.75rem;">
+                  Pay with cash, local CBE Birr, or Telebirr upon receiving the parcel from our premium courier driver.
+                </p>
+              </div>
+
+              <button type="submit" class="btn btn-accent" style="width: 100%; padding: 1.1rem;"><i class="fa-solid fa-lock" style="margin-right: 0.5rem;"></i> Confirmed Secure Order Placement</button>
+            </form>
+
+            <!-- Checkout Summary (Right sidebar) -->
+            <div class="cart-table-card" style="background-color: var(--surface-muted); padding: 2rem; border-radius: var(--radius-md); border: 1px solid var(--gray-100); height: fit-content;">
+              <h3 style="font-size: 1.2rem; margin-bottom: 1.5rem; border-bottom: 1.5px solid var(--gray-100); padding-bottom: 0.5rem;">ORDER SUMMARY</h3>
+              
+              <div id="checkoutItemsList" style="margin-bottom: 1.5rem;">
+                <!-- Cart items list populated by script -->
+              </div>
+
+              <div style="display: flex; flex-direction: column; gap: 0.75rem; font-size: 0.95rem; border-bottom: 1.5px solid var(--gray-100); padding-bottom: 1.25rem; margin-bottom: 1.25rem;">
+                <div style="display: flex; justify-content: space-between; color: var(--gray-500);">
+                  <span>Cart Subtotal</span>
+                  <strong id="checkoutSubTotal" style="color:var(--primary);">Br 0</strong>
+                </div>
+                <div style="display: flex; justify-content: space-between; color: var(--gray-500);">
+                  <span>Premium Express Shipping</span>
+                  <strong id="checkoutShipping" style="color:var(--primary);">FREE</strong>
+                </div>
+              </div>
+
+              <div style="display: flex; justify-content: space-between; font-weight: 800; font-size: 1.25rem; color: var(--accent);">
+                <span>GRAND TOTAL</span>
+                <span id="checkoutTotal">Br 0</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- ── PANE 5: SETTINGS ── -->
+        <div class="profile-pane" id="paneSettings">
+          <h2>Account Settings</h2>
+          
+          <div class="grid-2" style="gap:3rem;">
+            <!-- Form 1: Profile -->
+            <form id="profileDetailsForm" style="display:flex; flex-direction:column; gap:1.25rem;">
+              <h3 style="font-size: 1.15rem; border-left: 3px solid var(--accent); padding-left: 0.5rem; margin-bottom: 0.5rem;">Personal Information</h3>
+              
+              <div class="form-group-custom">
+                <label for="profileFormFirst">First Name</label>
+                <input type="text" id="profileFormFirst" class="form-input-styled" required autocomplete="given-name">
+              </div>
+              
+              <div class="form-group-custom">
+                <label for="profileFormLast">Last Name</label>
+                <input type="text" id="profileFormLast" class="form-input-styled" autocomplete="family-name">
+              </div>
+
+              <div class="form-group-custom">
+                <label for="profileFormEmail">Email Address</label>
+                <input type="email" id="profileFormEmail" class="form-input-styled" required autocomplete="email">
+              </div>
+
+              <button type="submit" class="btn btn-primary" style="padding:0.75rem 1.5rem; font-size:0.9rem; align-self:flex-start;">Save Profile Details</button>
+            </form>
+
+            <!-- Form 2: Password -->
+            <form id="profilePassForm" style="display:flex; flex-direction:column; gap:1.25rem; border-left:1.5px solid var(--gray-100); padding-left:2.5rem;">
+              <h3 style="font-size: 1.15rem; border-left: 3px solid var(--accent); padding-left: 0.5rem; margin-bottom: 0.5rem;">Change Password</h3>
+
+              <div class="form-group-custom">
+                <label for="profPassCurrent">Current Password</label>
+                <input type="password" id="profPassCurrent" class="form-input-styled" placeholder="••••••••" autocomplete="current-password">
+              </div>
+
+              <div class="form-group-custom">
+                <label for="profPassNext">New Password</label>
+                <input type="password" id="profPassNext" class="form-input-styled" placeholder="Min 6 characters" autocomplete="new-password">
+              </div>
+
+              <div class="form-group-custom">
+                <label for="profPassConfirm">Confirm New Password</label>
+                <input type="password" id="profPassConfirm" class="form-input-styled" placeholder="••••••••" autocomplete="new-password">
+              </div>
+
+              <button type="submit" class="btn btn-accent" style="padding:0.75rem 1.5rem; font-size:0.9rem; align-self:flex-start;">Update Password</button>
+            </form>
+          </div>
+        </div>
+
+      </section>
+
+    </div>
+  </div>
+
+  <!-- VIP PROFILE GATE (Forces Login if activeUser is absent) -->
+  <div class="profile-gate" id="profileGateOverlay">
+    <div class="profile-gate-card">
+      <i class="fa-solid fa-gem gate-icon"></i>
+      <h2>ELAWI CLUB PORTAL</h2>
+      <p>Exclusive access to your loyalty points balances, order tracking, bespoke styling requests, and fast checkouts is reserved for members.</p>
+      
+      <div class="profile-gate-actions">
+        <a href="auth.html" class="btn btn-accent">Sign In / Join Now</a>
+        <a href="shop.html" class="btn btn-secondary">Explore Store First</a>
+      </div>
+    </div>
+  </div>
+
+  <!-- BRAND PREMIUM FOOTER -->
+  <footer class="footer">
+    <div class="container">
+      <div class="grid-4" style="gap: 3rem;">
+        <div>
+          <div class="footer-brand">
+            <h2>ELAWI</h2>
+          </div>
+          <p class="footer-desc">For us, true refinement lies in simplicity, organic materials, and hand-tailored attention to detail.</p>
+          <div class="social-links">
+            <a href="https://www.instagram.com/before.the.name?igsh=MjRnc2d4YnVkdnM0" target="_blank" class="social-icon"><i class="fa-brands fa-instagram"></i></a>
+            <a href="https://www.tiktok.com/@before.the.name5" target="_blank" class="social-icon"><i class="fa-brands fa-tiktok"></i></a>
+            <a href="https://www.instagram.com/before.the.name?igsh=MjRnc2d4YnVkdnM0" target="_blank" class="social-icon"><i class="fa-brands fa-pinterest"></i></a>
+          </div>
+        </div>
+        
+        <div>   
+          <h3 class="footer-heading">COLLECTIONS</h3>
+          <ul class="footer-links">
+            <li><a href="shop.html?category=Traditional">Traditional</a></li>
+            <li><a href="shop.html?category=Modern Cut">Modern Cut</a></li>
+            <li><a href="shop.html?category=Minimalist">Minimalist</a></li>
+            <li><a href="shop.html">Browse All</a></li>
+          </ul>
+        </div>
+
+        <div>
+          <h3 class="footer-heading">CUSTOMER SERVICES</h3>
+          <ul class="footer-links">
+            <li><a href="contact.html">Support Desk</a></li>
+            <li><a href="about.html">Heritage Story</a></li>
+            <li><a href="profile.html">Order Status</a></li>
+            <li><a href="auth.html">VIP Membership</a></li>
+          </ul>
+        </div>
+
+        <div>
+          <h3 class="footer-heading">HEADQUARTERS</h3>
+          <div class="footer-contact-item">
+            <i class="fa-solid fa-location-dot"></i>
+            <div>
+              <strong>Retail Flagship</strong>
+              Addis Ababa, ETHIOPIA
+            </div>
+          </div>
+          <div class="footer-contact-item">
+            <i class="fa-solid fa-envelope"></i>
+            <div>
+              <strong>Inquiries & Concierge</strong>
+              concierge@elawi.com
+            </div>
+          </div>
+        </div>
+      </div>
+      
+      <div class="footer-bottom">
+        <p>&copy; 2026 ELAWI. All rights reserved. Elegant design & sustainable couture.</p>
+        <p>Addis Ababa &bull; ETHIOPIA </p>
+      </div>
+    </div>
+  </footer>
+
+  <script src="script.js"></script>
+  
+  <script>
+    // Handle switching page pane direct from hash links
+    window.addEventListener('hashchange', () => {
+      const hash = window.location.hash;
+      if (hash === '#paneFavorites') {
+        const item = document.getElementById('paneFavoritesTrigger');
+        switchProfilePane('paneFavorites', item);
+      } else if (hash === '#paneCheckout') {
+        const item = document.getElementById('paneCheckoutTrigger');
+        switchProfilePane('paneCheckout', item);
+      }
+    });
+    // Check initially
+    if (window.location.hash === '#paneFavorites') {
+      setTimeout(() => {
+        const item = document.getElementById('paneFavoritesTrigger');
+        switchProfilePane('paneFavorites', item);
+      }, 200);
+    } else if (window.location.hash === '#paneCheckout') {
+      setTimeout(() => {
+        const item = document.getElementById('paneCheckoutTrigger');
+        switchProfilePane('paneCheckout', item);
+      }, 200);
+    }
+  </script>
+</body>
+</html>

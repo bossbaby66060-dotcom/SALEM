@@ -1,0 +1,181 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Sign In / Join | ELAWI Member Portal</title>
+  <meta name="description" content="Sign in to your ELAWI account or create a new membership to access exclusive benefits, order history, and VIP rewards.">
+
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <link rel="stylesheet" href="style.css">
+  <script>if(localStorage.getItem('elawi_theme')==='dark')document.documentElement.setAttribute('data-theme','dark');</script>
+</head>
+<body class="auth-page-body">
+
+  <!-- Decorative background blobs -->
+  <div class="auth-blob auth-blob-1"></div>
+  <div class="auth-blob auth-blob-2"></div>
+
+  <!-- Floating theme toggle for auth page -->
+  <button class="theme-toggle-btn" id="themeToggle" title="Toggle dark / light mode" aria-label="Toggle theme" style="position:fixed;top:1.25rem;right:1.5rem;z-index:999;">
+    <i class="fa-solid fa-sun icon-sun"></i>
+    <i class="fa-solid fa-moon icon-moon"></i>
+  </button>
+
+  <div class="auth-page-wrap">
+
+    <!-- ===== LEFT PANEL (branding) ===== -->
+    <div class="auth-brand-panel">
+      <a href="index.html" class="auth-brand-logo">ELAWI</a>
+
+      <div class="auth-brand-copy">
+        <h1>Elevate your<br>wardrobe journey.</h1>
+        <p>Join the ELAWI club and unlock exclusive rewards, early access to new collections, and personalised styling sessions.</p>
+
+        <ul class="auth-perks-list">
+          <li><i class="fa-solid fa-gem"></i> VIP Loyalty Points on every purchase</li>
+          <li><i class="fa-solid fa-truck-fast"></i> Free express shipping from Br 150</li>
+          <li><i class="fa-solid fa-rotate-left"></i> 30-day hassle-free returns</li>
+          <li><i class="fa-solid fa-bell"></i> Early access to curated drops</li>
+        </ul>
+      </div>
+
+      <div class="auth-brand-footer">
+        <a href="index.html"><i class="fa-solid fa-arrow-left"></i> Back to Store</a>
+      </div>
+    </div>
+
+    <!-- ===== RIGHT PANEL (form) ===== -->
+    <div class="auth-form-panel">
+      <div class="auth-form-card">
+
+        <!-- Tab switcher -->
+        <div class="auth-tabs" id="authTabs">
+          <button class="auth-tab active" id="tabLogin" onclick="switchAuthTab('login')">Sign In</button>
+          <button class="auth-tab" id="tabSignup" onclick="switchAuthTab('signup')">Create Account</button>
+          <div class="auth-tab-slider" id="authTabSlider"></div>
+        </div>
+
+        <!-- ── LOGIN FORM ── -->
+        <form id="loginForm" class="auth-form active" novalidate>
+          <h2 class="auth-form-title">Welcome back</h2>
+          <p class="auth-form-subtitle">Sign in to your ELAWI account</p>
+
+          <div class="auth-field-group" id="loginEmailGroup">
+            <label for="loginEmail"><i class="fa-solid fa-envelope"></i> Email Address</label>
+            <input type="email" id="loginEmail" placeholder="you@example.com" autocomplete="email" required>
+            <span class="auth-field-error" id="loginEmailErr"></span>
+          </div>
+
+          <div class="auth-field-group" id="loginPassGroup">
+            <label for="loginPass"><i class="fa-solid fa-lock"></i> Password</label>
+            <div class="auth-password-wrap">
+              <input type="password" id="loginPass" placeholder="••••••••" autocomplete="current-password" required>
+              <button type="button" class="auth-eye-btn" onclick="togglePasswordVis('loginPass', this)">
+                <i class="fa-solid fa-eye"></i>
+              </button>
+            </div>
+            <span class="auth-field-error" id="loginPassErr"></span>
+          </div>
+
+          <div class="auth-remember-row">
+            <label class="auth-checkbox-label">
+              <input type="checkbox" id="rememberMe"> Remember me
+            </label>
+            <a href="#" class="auth-forgot-link" onclick="showForgotToast(event)">Forgot password?</a>
+          </div>
+
+          <button type="submit" class="auth-submit-btn" id="loginSubmitBtn">
+            <span class="auth-btn-text"><i class="fa-solid fa-arrow-right-to-bracket"></i> Sign In</span>
+            <span class="auth-btn-loader" style="display:none;"><i class="fa-solid fa-spinner fa-spin"></i></span>
+          </button>
+
+          <p class="auth-switch-hint">
+            Don't have an account?
+            <a href="#" onclick="switchAuthTab('signup'); return false;">Create one for free</a>
+          </p>
+        </form>
+
+        <!-- ── SIGN UP FORM ── -->
+        <form id="signupForm" class="auth-form" novalidate>
+          <h2 class="auth-form-title">Join ELAWI</h2>
+          <p class="auth-form-subtitle">Create your free membership account</p>
+
+          <div class="auth-field-row">
+            <div class="auth-field-group" id="signupFirstGroup">
+              <label for="signupFirst"><i class="fa-solid fa-user"></i> First Name</label>
+              <input type="text" id="signupFirst" placeholder="Jane" autocomplete="given-name" required>
+              <span class="auth-field-error" id="signupFirstErr"></span>
+            </div>
+            <div class="auth-field-group" id="signupLastGroup">
+              <label for="signupLast">Last Name</label>
+              <input type="text" id="signupLast" placeholder="Doe" autocomplete="family-name" required>
+              <span class="auth-field-error" id="signupLastErr"></span>
+            </div>
+          </div>
+
+          <div class="auth-field-group" id="signupEmailGroup">
+            <label for="signupEmail"><i class="fa-solid fa-envelope"></i> Email Address</label>
+            <input type="email" id="signupEmail" placeholder="you@example.com" autocomplete="email" required>
+            <span class="auth-field-error" id="signupEmailErr"></span>
+          </div>
+
+          <div class="auth-field-group" id="signupPassGroup">
+            <label for="signupPass"><i class="fa-solid fa-lock"></i> Password</label>
+            <div class="auth-password-wrap">
+              <input type="password" id="signupPass" placeholder="Min. 6 characters" autocomplete="new-password" required>
+              <button type="button" class="auth-eye-btn" onclick="togglePasswordVis('signupPass', this)">
+                <i class="fa-solid fa-eye"></i>
+              </button>
+            </div>
+            <div class="auth-password-strength" id="signupPassStrength">
+              <div class="strength-bars">
+                <div class="strength-bar" id="sb1"></div>
+                <div class="strength-bar" id="sb2"></div>
+                <div class="strength-bar" id="sb3"></div>
+                <div class="strength-bar" id="sb4"></div>
+              </div>
+              <span class="strength-label" id="strengthLabel">Enter a password</span>
+            </div>
+            <span class="auth-field-error" id="signupPassErr"></span>
+          </div>
+
+          <div class="auth-field-group" id="signupConfirmGroup">
+            <label for="signupConfirm"><i class="fa-solid fa-lock"></i> Confirm Password</label>
+            <div class="auth-password-wrap">
+              <input type="password" id="signupConfirm" placeholder="••••••••" autocomplete="new-password" required>
+              <button type="button" class="auth-eye-btn" onclick="togglePasswordVis('signupConfirm', this)">
+                <i class="fa-solid fa-eye"></i>
+              </button>
+            </div>
+            <span class="auth-field-error" id="signupConfirmErr"></span>
+          </div>
+
+          <label class="auth-checkbox-label auth-terms-label" id="signupTermsGroup">
+            <input type="checkbox" id="signupTerms">
+            I agree to the <a href="#">Terms of Service</a> and <a href="#">Privacy Policy</a>
+          </label>
+          <span class="auth-field-error" id="signupTermsErr"></span>
+
+          <button type="submit" class="auth-submit-btn" id="signupSubmitBtn">
+            <span class="auth-btn-text"><i class="fa-solid fa-user-plus"></i> Create My Account</span>
+            <span class="auth-btn-loader" style="display:none;"><i class="fa-solid fa-spinner fa-spin"></i></span>
+          </button>
+
+          <p class="auth-switch-hint">
+            Already a member?
+            <a href="#" onclick="switchAuthTab('login'); return false;">Sign in instead</a>
+          </p>
+        </form>
+
+      </div>
+    </div>
+
+  </div>
+
+  <!-- Toast notification -->
+  <div class="auth-toast" id="authToast"></div>
+
+  <script src="script.js"></script>
+</body>
+</html>
