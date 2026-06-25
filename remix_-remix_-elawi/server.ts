@@ -53,6 +53,7 @@ function standardizeProduct(p: any) {
 function readDB() {
   try {
     if (!fs.existsSync(DB_PATH)) {
+      console.warn(`[DB]: Database file not found at ${DB_PATH}, creating with defaults`);
       return { admin: { passwordHash: "elawipass123" }, categories: [], products: [], users: [] };
     }
     const raw = fs.readFileSync(DB_PATH, "utf-8");
@@ -60,6 +61,7 @@ function readDB() {
     if (parsed.products && Array.isArray(parsed.products)) {
       parsed.products = parsed.products.map(standardizeProduct);
     }
+    console.log(`[DB]: Successfully loaded ${parsed.products?.length || 0} products`);
     return parsed;
   } catch (error) {
     console.error("Database reading error:", error);
@@ -97,6 +99,9 @@ async function startServer() {
     res.setHeader("Pragma", "no-cache");
     res.setHeader("Expires", "0");
     res.setHeader("Surrogate-Control", "no-store");
+    res.setHeader("Access-Control-Allow-Origin", "*");
+    res.setHeader("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS");
+    res.setHeader("Access-Control-Allow-Headers", "Content-Type");
     next();
   });
 
@@ -283,10 +288,17 @@ async function startServer() {
     res.json({ success: true });
   });
 
-  // ── PRODUCTS API ──
+  // ── PRODUCTS API (Main endpoint) ──
   app.get("/api/products", (req, res) => {
-    const db = readDB();
-    res.json(db.products || []);
+    try {
+      const db = readDB();
+      const products = db.products || [];
+      console.log(`[API]: Returning ${products.length} products`);
+      res.json(products);
+    } catch (error) {
+      console.error("[API ERROR]: Failed to fetch products", error);
+      res.status(500).json({ success: false, message: "Failed to fetch products", products: [] });
+    }
   });
 
   app.post("/api/products", (req, res) => {
@@ -383,7 +395,7 @@ async function startServer() {
       },
       {
         id: 4,
-        name: "The Sage Kaftan",
+        name: "The Sage Green Kaftan",
         category: "Traditional",
         price: 240,
         rating: 4.8,
@@ -552,6 +564,9 @@ async function startServer() {
 
   app.listen(PORT, "0.0.0.0", () => {
     console.log(`[SERVER RUNNING]: Listening on http://0.0.0.0:${PORT}`);
+    console.log(`[DB STATUS]: Database location: ${DB_PATH}`);
+    const db = readDB();
+    console.log(`[DB STATUS]: Products loaded: ${db.products?.length || 0}`);
   });
 }
 
